@@ -1,4 +1,4 @@
-# AI Healthcare Agent - Initial Tasks
+# AI Healthcare Agent - Tasks for Proof of Concept (PoC)
 
 ## Project Setup Tasks
 
@@ -6,114 +6,115 @@
 - [x] Create Maven project with appropriate structure
 - [x] Configure pom.xml with necessary dependencies:
     - Akka Java SDK
-    - HTTP/gRPC libraries
+    - HTTP libraries
     - JSON processing libraries
     - Testing frameworks
 - [x] Set up logging configuration
 - [x] Create .gitignore file for project
 
-### 2. Core Domain Model Implementation
-- [ ] Define Patient domain model
+### 2. Core Domain Model Implementation (Simplified for PoC)
+- [ ] Define Basic Patient domain model
     - [ ] Create PatientEntity using Event Sourced Entity
-    - [ ] Define health-related events
-    - [ ] Implement command handlers
-    - [ ] Implement event handlers
-- [ ] Define Health Metrics models
+    - [ ] Define essential health-related events
+    - [ ] Implement basic command handlers
+    - [ ] Implement basic event handlers
+- [ ] Define Simplified Health Metrics models
     - [ ] Heart rate
-    - [ ] Sleep patterns
     - [ ] Activity levels
-    - [ ] Other vital signs
-- [ ] Define MedicalRecord domain model
-    - [ ] Create MedicalRecordEntity
-    - [ ] Define appropriate events and commands
+    - [ ] Other critical vital signs
 
-### 3. Integration Layer Implementation
-- [ ] Create HTTP endpoints for wearable devices
+### 3. Mock Integration Layer Implementation
+- [ ] Create HTTP endpoints with mock data providers
     - [ ] Define REST API for data submission
-    - [ ] Implement data validation
-    - [ ] Create serialization/deserialization logic
-- [ ] Create gRPC endpoints for EHR integration
-    - [ ] Define protocol buffers
-    - [ ] Implement service endpoints
-- [ ] Implement WebSocket endpoint for real-time UI updates
+    - [ ] Implement simple data validation
+    - [ ] Create mock data generators for wearable device data
+- [ ] Create mock EHR data service
+    - [ ] Define simple data structures
+    - [ ] Implement mock medical record provider
+- [ ] Implement basic WebSocket endpoint for UI updates
 
-### 4. Data Processing Components
-- [ ] Create WearableDataConsumer
-    - [ ] Implement processing logic
+### 4. Simplified Data Processing Components
+- [ ] Create basic WearableDataProcessor
+    - [ ] Implement simple processing logic
     - [ ] Connect to PatientEntity
-- [ ] Create MedicalRecordConsumer
-    - [ ] Implement processing logic
-    - [ ] Connect to MedicalRecordEntity
-- [ ] Implement data transformation and normalization utilities
+- [ ] Implement basic data transformation utilities
+- [ ] Create data simulator for testing
 
-### 5. Health Monitoring Implementation
-- [ ] Create HealthMonitoringWorkflow
-    - [ ] Define workflow steps
-    - [ ] Implement health metrics analysis
-    - [ ] Create alert generation logic
-- [ ] Implement ThresholdConfigEntity
-    - [ ] Define configuration model
-    - [ ] Implement update mechanisms
-- [ ] Create AlertsView
-    - [ ] Define view model
-    - [ ] Implement materialization logic
+### 5. Basic Health Monitoring Implementation
+- [ ] Create simplified HealthMonitoringService
+    - [ ] Implement basic metrics analysis
+    - [ ] Create simple alert generation logic
+- [ ] Implement basic ThresholdConfig
+    - [ ] Define simple configuration model
+- [ ] Create simplified AlertsView
+    - [ ] Implement basic view model
 
-### 6. AI Chat Interface Implementation
-- [ ] Set up NLP processing components
-    - [ ] Implement query understanding
-    - [ ] Create medical terminology parser
-- [ ] Create chat response generation system
-    - [ ] Implement response templates
-    - [ ] Connect to patient data for personalization
-- [ ] Implement PatientQueryEndpoint
+### 6. Basic AI Chat Interface Implementation
+- [ ] Create simplified chat system with predefined responses
+    - [ ] Implement basic keyword matching
+    - [ ] Create response templates for common questions
+- [ ] Implement basic PatientQueryEndpoint
     - [ ] Define API endpoints
-    - [ ] Create request/response models
+    - [ ] Create simple request/response models
 
-### 7. Health Report Generation
-- [ ] Create WeeklyReportWorkflow
-    - [ ] Define workflow steps
-    - [ ] Implement data aggregation logic
-- [ ] Implement report templates
-    - [ ] Define data visualization components
-    - [ ] Create personalized recommendation engine
-- [ ] Set up WeeklyReportScheduler using Timed Actions
+### 7. Simple Health Report Generation
+- [ ] Create basic ReportGenerator
+    - [ ] Implement simple data aggregation
+    - [ ] Create basic report templates
+- [ ] Set up simple scheduler for report generation
 
-### 8. Web Application UI Setup
-- [ ] Create basic web application structure
-    - [ ] Setup React/Angular framework
-    - [ ] Define component structure
-- [ ] Implement user authentication
-    - [ ] Create login/registration flows
-    - [ ] Set up authorization
-- [ ] Create dashboard components
-    - [ ] Health metrics display
-    - [ ] Alerts section
-    - [ ] Chat interface
+### 8. MVP Web Application UI
+- [ ] Create minimal web application
+    - [ ] Setup simple frontend (HTML/CSS/JS or basic React)
+    - [ ] Define essential components
+- [ ] Implement simplified user authentication (mock for PoC)
+    - [ ] Create basic login flow
+- [ ] Create essential dashboard components
+    - [ ] Basic health metrics display
+    - [ ] Simple alerts section
+    - [ ] Basic chat interface
 
-### 9. Testing
-- [ ] Set up unit testing framework
+### 9. Testing for PoC
+- [ ] Set up basic unit testing
     - [ ] Create test utilities
-    - [ ] Implement entity tests
-- [ ] Implement integration tests
+    - [ ] Implement core entity tests
+- [ ] Create simple integration tests
     - [ ] API endpoint tests
-    - [ ] Workflow tests
-- [ ] Create end-to-end test scenarios
+- [ ] Develop manual testing scenarios
 
-### 10. DevOps & Deployment
-- [ ] Set up CI/CD pipeline
-    - [ ] Configure build automation
-    - [ ] Implement test automation
-- [ ] Create Docker containers
-    - [ ] Dockerize application
-    - [ ] Create compose configuration
-- [ ] Prepare deployment documentation
+### 10. Demo Environment Setup
+- [ ] Create simple Docker setup
+    - [ ] Dockerize PoC application
+- [ ] Prepare demo data sets
+- [ ] Create demo scripts
 
-## Priority Order
+## Additional PoC-Specific Tasks
 
-1. Core domain models (Patient, HealthMetrics)
-2. Data integration components (HTTP endpoints)
-3. Basic monitoring workflow
-4. Simple UI
-5. Basic chat interface
-6. Report generation
-7. Advanced features and optimizations
+### 11. Data Simulation Tools
+- [ ] Create data simulation tool for wearable devices
+    - [ ] Implement configurable data patterns
+    - [ ] Create UI for controlling simulation
+- [ ] Implement mock patient scenarios
+    - [ ] Define sample patient profiles
+    - [ ] Create simulated health events
+
+### 12. PoC Documentation
+- [ ] Create PoC architecture overview document
+- [ ] Write setup and demonstration guide
+- [ ] Document limitations and future implementation plans
+
+### 13. Stakeholder Demo Preparation
+- [ ] Create demonstration script
+- [ ] Prepare sample scenarios
+- [ ] Design evaluation feedback mechanism
+
+## Priority Order for PoC
+
+1. Core domain models (Simplified Patient, HealthMetrics)
+2. Mock data integration components
+3. Basic monitoring implementation
+4. Simple UI with minimal dashboard
+5. Simple chat interface with predefined responses
+6. Basic report generation
+7. Data simulation tools for demo
+8. Documentation and demo materials

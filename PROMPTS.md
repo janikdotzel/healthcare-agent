@@ -111,7 +111,7 @@ PLANNING.md  - high level direction, scope ,tech, etc.
 TASK.md - initial tasks to knock out for the project.
 ```
 
-> I needed to review the TASK.md and PLANNING.md to and adjust it. It was too extensive.
+> I adjusted the TASK.md and PLANNING.md a little bit. They were too extensive.
 
 2.
 ```
@@ -125,4 +125,5 @@ I want to start with a PoC and I dont' need the full functionality.
 We can mock the integrations with external systems to bet the project started make it real later.
 Please update the tasks accordingly. Add or remove tasks as needed.
 ```
+
 
