@@ -11,8 +11,8 @@ import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import shoppingcart.application.ShoppingCartEntity;
-import shoppingcart.domain.ShoppingCart;
+import samples.shoppingcart.application.ShoppingCartEntity;
+import samples.shoppingcart.domain.ShoppingCart;
 
 import java.util.concurrent.CompletionStage;
 

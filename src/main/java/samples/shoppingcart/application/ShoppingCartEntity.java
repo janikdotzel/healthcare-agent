@@ -6,9 +6,9 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import shoppingcart.domain.ShoppingCart;
-import shoppingcart.domain.ShoppingCart.LineItem;
-import shoppingcart.domain.ShoppingCartEvent;
+import samples.shoppingcart.domain.ShoppingCart;
+import samples.shoppingcart.domain.ShoppingCart.LineItem;
+import samples.shoppingcart.domain.ShoppingCartEvent;
 
 import java.util.Collections;
 
