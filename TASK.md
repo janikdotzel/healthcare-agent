@@ -108,17 +108,6 @@
     - [ ] Create compose configuration
 - [ ] Prepare deployment documentation
 
-## First Sprint Focus (2 weeks)
-
-For the first sprint, we will focus on the core foundation of the system:
-
-1. Complete project setup and structure
-2. Implement basic Patient domain model with Event Sourced Entity
-3. Create simple HTTP endpoint for health data submission
-4. Implement basic WearableDataConsumer
-5. Create a simple web UI with authentication
-6. Set up basic testing framework
-
 ## Priority Order
 
 1. Core domain models (Patient, HealthMetrics)

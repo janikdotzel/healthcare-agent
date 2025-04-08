@@ -120,6 +120,9 @@ The README.md tells you what the proejct is about.
 The PLANNING.md tells you about the high level direction, scope, tech , etc.
 The TASK.md tells you about all the tasks in the project.
 
-Please complete the Task 2.1 
+Please update the tasks in the TASK.md file.
+I want to start with a PoC and I dont' need the full functionality.
+We can mock the integrations with external systems to bet the project started make it real later.
+Please update the tasks accordingly. Add or remove tasks as needed.
 ```
 
