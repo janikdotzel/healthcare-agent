@@ -13,7 +13,7 @@
 - [x] Create .gitignore file for project
 
 ### 2. Core Domain Model Implementation (Simplified for PoC)
-- [ ] Define Basic Patient domain model
+- [ ] Define Basic Patient as an Event-Sourced Entity
     - [ ] Create PatientEntity using Event Sourced Entity
     - [ ] Define essential health-related events
     - [ ] Implement basic command handlers

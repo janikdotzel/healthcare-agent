@@ -126,4 +126,9 @@ We can mock the integrations with external systems to bet the project started ma
 Please update the tasks accordingly. Add or remove tasks as needed.
 ```
 
-
+3. 
+```
+Please do task 2 from the TASK.md file.
+Use the Akka SDK as the implementation framework.
+Docs about the SDK are in the .akka/docs folder.
+```
