@@ -1,4 +1,4 @@
-package io.akka.health.application;
+package io.akka.health.agent.application;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
@@ -6,8 +6,8 @@ import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.akka.health.domain.Patient;
-import io.akka.health.domain.PatientEvent;
+import io.akka.health.agent.domain.Patient;
+import io.akka.health.agent.domain.PatientEvent;
 
 import java.time.LocalDate;
 

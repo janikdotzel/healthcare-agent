@@ -1,7 +1,7 @@
 
-package io.akka.health.application;
+package io.akka.health.agent.application;
 
-import io.akka.health.domain.SessionEvent;
+import io.akka.health.agent.domain.SessionEvent;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.annotations.Query;

@@ -1,4 +1,4 @@
-package io.akka.common;
+package io.akka.health.common;
 
 import io.akka.Bootstrap;
 

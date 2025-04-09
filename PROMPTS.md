@@ -111,7 +111,7 @@ PLANNING.md  - high level direction, scope ,tech, etc.
 TASK.md - initial tasks to knock out for the project.
 ```
 
-> I adjusted the TASK.md and PLANNING.md a little bit. They were too extensive.
+> I manually adjusted the TASK.md and PLANNING.md a little bit. They were too extensive.
 
 2.
 ```
@@ -132,3 +132,11 @@ Please do task 2 from the TASK.md file.
 Use the Akka SDK as the implementation framework.
 Docs about the SDK are in the .akka/docs folder.
 ```
+
+4.
+```
+Do execute Task 2.1 to implement the event sourced entity with the akka libraries. The PatientEntity.
+There is an example of a event sourced shopping cart entity in the class samples.shoppingcart.application.ShoppingCartEntity
+```
+
+

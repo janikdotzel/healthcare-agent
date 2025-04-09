@@ -1,4 +1,4 @@
-package io.akka.common;
+package io.akka.health.common;
 
 import com.mongodb.client.MongoClient;
 import dev.langchain4j.data.segment.TextSegment;

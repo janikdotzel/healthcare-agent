@@ -1,9 +1,9 @@
-package io.akka.health.application;
+package io.akka.health.agent.application;
 
 import akka.Done;
 import akka.NotUsed;
-import io.akka.common.MongoDbUtils;
-import io.akka.common.OpenAiUtils;
+import io.akka.health.common.MongoDbUtils;
+import io.akka.health.common.OpenAiUtils;
 import akka.javasdk.client.ComponentClient;
 import akka.stream.javadsl.Source;
 import com.mongodb.client.MongoClient;

@@ -1,4 +1,4 @@
-package io.akka.common;
+package io.akka.health.common;
 
 import dev.langchain4j.model.Tokenizer;
 import dev.langchain4j.model.openai.OpenAiChatModel;

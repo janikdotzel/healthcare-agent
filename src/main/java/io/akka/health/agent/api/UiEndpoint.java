@@ -1,4 +1,4 @@
-package io.akka.health.api;
+package io.akka.health.agent.api;
 
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;

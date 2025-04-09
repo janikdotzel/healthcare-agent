@@ -1,6 +1,6 @@
-package io.akka.health.api;
+package io.akka.health.agent.api;
 
-import io.akka.health.application.ConversationHistoryView;
+import io.akka.health.agent.application.ConversationHistoryView;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
