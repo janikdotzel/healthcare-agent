@@ -1,4 +1,4 @@
-package io.akka.health.index.domain;
+package io.akka.health.ingest.domain;
 
 /**
  * Represents the data collected from a sensor.

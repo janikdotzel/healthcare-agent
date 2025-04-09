@@ -1,10 +1,10 @@
-package io.akka.health.index.application;
+package io.akka.health.ingest.application;
 
 import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
-import io.akka.health.index.domain.SensorData;
+import io.akka.health.ingest.domain.SensorData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

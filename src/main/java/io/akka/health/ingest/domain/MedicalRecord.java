@@ -1,4 +1,4 @@
-package io.akka.health.index.domain;
+package io.akka.health.ingest.domain;
 
 /**
     * Represents a medical record for a patient.

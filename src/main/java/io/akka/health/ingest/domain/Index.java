@@ -1,4 +1,4 @@
-package io.akka.health.index.domain;
+package io.akka.health.ingest.domain;
 
 import akka.Done;
 import io.akka.health.common.MongoDbUtils;
@@ -35,33 +35,11 @@ public class Index {
     this.splitter = new DocumentByCharacterSplitter(500, 50, OpenAiUtils.buildTokenizer());
   }
 
-  public static Index createForSensor(MongoClient mongoClient) {
-    String databaseName = "health";
-    String collectionName = "sensor";
-    String indexName = "sensor-index";
-    return new Index(mongoClient, databaseName, collectionName, indexName);
-  }
-
   public static Index createForMedicalRecord(MongoClient mongoClient) {
       String databaseName = "health";
       String collectionName = "medicalrecord";
-      String indexName = "medicalrecord-index";
+      String indexName = "medicalrecord-ingest";
       return new Index(mongoClient, databaseName, collectionName, indexName);
-  }
-
-  public CompletionStage<Done> indexSensorData(SensorData sensorData) {
-    Metadata metadata = Metadata.metadata("patientId", sensorData.patientId());
-    metadata.put("source", sensorData.source());
-    metadata.put("description", sensorData.description());
-    Document document = Document.from(sensorData.value());
-    List<TextSegment> segments = splitter.split(document);
-
-    // index each segment
-    var done = CompletableFuture.completedFuture(Done.getInstance());
-    return segments.stream().reduce(
-                    done,
-                    (acc, seg) -> indexSegment(seg),
-                    (a,b) -> done);
   }
 
   public CompletionStage<Done> indexMedicalRecord(MedicalRecord medicalRecord) {
@@ -71,7 +49,7 @@ public class Index {
     Document document = Document.from(medicalRecord.toString());
     List<TextSegment> segments = splitter.split(document);
 
-    // index each segment
+    // ingest each segment
     var done = CompletableFuture.completedFuture(Done.getInstance());
     return segments.stream().reduce(
             done,

@@ -32,7 +32,7 @@ import java.util.concurrent.CompletionStage;
  * UiEndpoint.
  *
  * The service is configured as a RAG agent that uses the OpenAI API to generate responses based on the Akka SDK documentation.
- * It uses a MongoDB Atlas index to retrieve relevant documentation sections for the user's question.
+ * It uses a MongoDB Atlas ingest to retrieve relevant documentation sections for the user's question.
  *
  * Moreover, the whole RAG setup is done through LangChain4j APIs.
  *

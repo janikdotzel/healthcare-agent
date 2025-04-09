@@ -1,11 +1,14 @@
-package io.akka.health.index.application;
+package io.akka.health.ingest.application;
 
 
+import akka.Done;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.Consume;
 import akka.javasdk.consumer.Consumer;
 import com.mongodb.client.MongoClient;
-import io.akka.health.index.domain.Index;
+import io.akka.health.ingest.domain.Index;
+
+import java.util.concurrent.CompletionStage;
 
 @ComponentId("medicalrecord-consumer")
 @Consume.FromEventSourcedEntity(MedicalRecordEntity.class)
@@ -22,8 +25,7 @@ public class MedicalRecordConsumer extends Consumer {
         return switch (event) {
             case MedicalRecordEntity.Event.Added added -> {
                 Index index = Index.createForMedicalRecord(mongoClient);
-                index.indexMedicalRecord(added.data());
-                yield effects().done();
+                yield effects().asyncDone(index.indexMedicalRecord(added.data()));
             }
         };
     }
