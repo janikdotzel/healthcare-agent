@@ -43,7 +43,7 @@ public class Index {
   }
 
   public CompletionStage<Done> indexMedicalRecord(MedicalRecord medicalRecord) {
-    Metadata metadata = Metadata.metadata("patientId", medicalRecord.patientId());
+    Metadata metadata = Metadata.metadata("userId", medicalRecord.patientId());
     metadata.put("reasonForVisit", medicalRecord.reasonForVisit());
     metadata.put("diagnosis", medicalRecord.diagnosis());
     Document document = Document.from(medicalRecord.toString());

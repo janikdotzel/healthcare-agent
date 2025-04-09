@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-@ComponentId("conversion-history-view")
+@ComponentId("session-view")
 public class SessionView extends View {
 
   private final static Logger logger = LoggerFactory.getLogger(SessionView.class);
