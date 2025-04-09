@@ -18,6 +18,7 @@ import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
 import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
+import io.akka.health.ui.application.SessionEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +29,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * This services works as an interface to the AI.
  * It returns the AI response as a stream and can be used to stream out a response using for example SSE in an
- * HttpEndpoint.
+ * UiEndpoint.
  *
  * The service is configured as a RAG agent that uses the OpenAI API to generate responses based on the Akka SDK documentation.
  * It uses a MongoDB Atlas index to retrieve relevant documentation sections for the user's question.

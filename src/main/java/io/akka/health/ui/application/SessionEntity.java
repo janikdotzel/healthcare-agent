@@ -1,4 +1,4 @@
-package io.akka.health.agent.application;
+package io.akka.health.ui.application;
 
 import akka.Done;
 import io.akka.health.agent.domain.SessionEvent;
@@ -11,8 +11,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.akka.health.agent.application.SessionEntity.MessageType.ASSISTANT;
-import static io.akka.health.agent.application.SessionEntity.MessageType.USER;
+import static io.akka.health.ui.application.SessionEntity.MessageType.ASSISTANT;
+import static io.akka.health.ui.application.SessionEntity.MessageType.USER;
 
 @ComponentId("session-entity")
 public class SessionEntity extends EventSourcedEntity<SessionEntity.State, SessionEvent> {

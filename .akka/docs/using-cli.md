@@ -169,7 +169,7 @@ akka services components my-service list
 The CLI will display a list of components for the specified service:
 ```shell
 NAME                                     TYPE           TYPE ID
-com.example.api.ShoppingCartController   HttpEndpoint
+com.example.api.ShoppingCartController   UiEndpoint
 com.example.api.ShoppingCartEntity       KeyValueEntity shopping-cart
 ```
 

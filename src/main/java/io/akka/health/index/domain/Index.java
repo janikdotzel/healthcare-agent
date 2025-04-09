@@ -66,6 +66,8 @@ public class Index {
 
   public CompletionStage<Done> indexMedicalRecord(MedicalRecord medicalRecord) {
     Metadata metadata = Metadata.metadata("patientId", medicalRecord.patientId());
+    metadata.put("reasonForVisit", medicalRecord.reasonForVisit());
+    metadata.put("diagnosis", medicalRecord.diagnosis());
     Document document = Document.from(medicalRecord.toString());
     List<TextSegment> segments = splitter.split(document);
 
