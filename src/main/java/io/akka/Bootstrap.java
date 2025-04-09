@@ -1,7 +1,7 @@
 package io.akka;
 
-import akka.ask.agent.application.AskAkkaAgent;
-import akka.ask.common.KeyUtils;
+import io.akka.health.application.AskAkkaAgent;
+import io.akka.common.KeyUtils;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.ServiceSetup;
 import akka.javasdk.annotations.Setup;
