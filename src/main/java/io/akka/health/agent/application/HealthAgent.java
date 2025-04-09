@@ -2,6 +2,8 @@ package io.akka.health.agent.application;
 
 import akka.Done;
 import akka.NotUsed;
+import io.akka.health.agent.util.AkkaStreamUtils;
+import io.akka.health.agent.util.StreamedResponse;
 import io.akka.health.common.MongoDbUtils;
 import io.akka.health.common.OpenAiUtils;
 import akka.javasdk.client.ComponentClient;
@@ -38,9 +40,9 @@ import java.util.concurrent.CompletionStage;
  * and AI message) are saved to the SessionEntity.
  *
  */
-public class AskAkkaAgent {
+public class HealthAgent {
 
-  private final static Logger logger = LoggerFactory.getLogger(AskAkkaAgent.class);
+  private final static Logger logger = LoggerFactory.getLogger(HealthAgent.class);
   private final ComponentClient componentClient;
   private final MongoClient mongoClient;
 
@@ -57,7 +59,7 @@ public class AskAkkaAgent {
     TokenStream chat(String message);
   }
 
-  public AskAkkaAgent(ComponentClient componentClient, MongoClient mongoClient) {
+  public HealthAgent(ComponentClient componentClient, MongoClient mongoClient) {
     this.componentClient = componentClient;
     this.mongoClient = mongoClient;
 

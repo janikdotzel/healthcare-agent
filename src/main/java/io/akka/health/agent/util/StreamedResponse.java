@@ -1,4 +1,4 @@
-package io.akka.health.agent.application;
+package io.akka.health.agent.util;
 
 public record StreamedResponse(String content, int inputTokens, int outputTokens, boolean finished) {
 

@@ -1,6 +1,6 @@
 package io.akka;
 
-import io.akka.health.agent.application.AskAkkaAgent;
+import io.akka.health.agent.application.HealthAgent;
 import io.akka.health.common.KeyUtils;
 import akka.javasdk.DependencyProvider;
 import akka.javasdk.ServiceSetup;
@@ -39,8 +39,8 @@ public class Bootstrap implements ServiceSetup {
     return new DependencyProvider() {
       @Override
       public <T> T getDependency(Class<T> cls) {
-        if (cls.equals(AskAkkaAgent.class)) {
-          return (T) new AskAkkaAgent(componentClient, mongoClient);
+        if (cls.equals(HealthAgent.class)) {
+          return (T) new HealthAgent(componentClient, mongoClient);
         }
 
         if (cls.equals(MongoClient.class)) {
