@@ -43,12 +43,12 @@ public class ConversationHistoryView extends View {
 
     public Effect<Session> onEvent(SessionEvent event) {
       return switch (event) {
-        case SessionEvent.AiMessageAdded added -> aiMessage(added);
+        case SessionEvent.AssistantMessageAdded added -> aiMessage(added);
         case SessionEvent.UserMessageAdded added -> userMessage(added);
       };
     }
 
-    private Effect<Session> aiMessage(SessionEvent.AiMessageAdded added) {
+    private Effect<Session> aiMessage(SessionEvent.AssistantMessageAdded added) {
       Message newMessage = new Message(added.response(), "ai", added.timeStamp().toEpochMilli());
       var rowState = rowStateOrNew(added.userId(), added.sessionId());
       return effects().updateRow(rowState.add(newMessage));

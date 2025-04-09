@@ -24,7 +24,7 @@ public sealed interface PatientEvent {
 
   @TypeName("medical-info-updated")
   record MedicalInfoUpdated(
-      String key,   // e.g., "allergies", "blood-type", "conditions"
+      String key,   // e.g., "allergies", "blood-source", "conditions"
       String value) implements PatientEvent {
   }
 

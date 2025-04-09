@@ -3,34 +3,20 @@ package io.akka.health.index.domain;
 import akka.Done;
 import io.akka.health.common.MongoDbUtils;
 import io.akka.health.common.OpenAiUtils;
-import akka.javasdk.annotations.ComponentId;
-import akka.javasdk.workflow.Workflow;
 import com.mongodb.client.MongoClient;
-import dev.langchain4j.data.document.BlankDocumentException;
-import dev.langchain4j.data.document.DefaultDocument;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
 import dev.langchain4j.data.document.Metadata;
-import dev.langchain4j.data.document.parser.TextDocumentParser;
 import dev.langchain4j.data.document.splitter.DocumentByCharacterSplitter;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.store.embedding.mongodb.MongoDbEmbeddingStore;
-import kotlin.random.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.Stream;
 
 public class Index {
 
@@ -64,7 +50,7 @@ public class Index {
   }
 
   public CompletionStage<Done> indexSensorData(SensorData sensorData) {
-    Metadata metadata = Metadata.metadata("type", sensorData.type());
+    Metadata metadata = Metadata.metadata("source", sensorData.source());
     metadata.put("description", sensorData.description());
     Document document = Document.from(sensorData.value());
     List<TextSegment> segments = splitter.split(document);

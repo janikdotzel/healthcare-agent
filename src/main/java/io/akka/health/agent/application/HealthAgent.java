@@ -46,15 +46,13 @@ public class HealthAgent {
   private final ComponentClient componentClient;
   private final MongoClient mongoClient;
 
-  private final String sysMessage = """
+  private final String systemMessage = """
     You are a very enthusiastic Akka representative who loves to help people!
     Given the following sections from the Akka SDK documentation, answer the question using only that information, outputted in markdown format. 
     If you are unsure and the text is not explicitly written in the documentation, say:
     Sorry, I don't know how to help with that.
     """;
 
-  // this langchain4j Assistant emits the response as a stream
-  // check AkkaStreamUtils.toAkkaSource to see how this stream is converted to an Akka Source
   interface Assistant {
     TokenStream chat(String message);
   }
@@ -62,7 +60,6 @@ public class HealthAgent {
   public HealthAgent(ComponentClient componentClient, MongoClient mongoClient) {
     this.componentClient = componentClient;
     this.mongoClient = mongoClient;
-
   }
 
   private CompletionStage<Done> addExchange(String compositeEntityId, SessionEntity.Exchange conversation) {
@@ -72,9 +69,6 @@ public class HealthAgent {
       .invokeAsync(conversation);
   }
 
-  /**
-   * Fetches the history of the conversation for a given sessionId.
-   */
   private CompletionStage<List<ChatMessage>> fetchHistory(String  entityId) {
     return componentClient
         .forEventSourcedEntity( entityId)
@@ -84,7 +78,7 @@ public class HealthAgent {
 
   private ChatMessage toChatMessage(SessionEntity.Message msg) {
     return switch (msg.type()) {
-      case AI -> new AiMessage(msg.content());
+      case ASSISTANT -> new AiMessage(msg.content());
       case USER -> new UserMessage(msg.content());
     };
   }
@@ -121,14 +115,14 @@ public class HealthAgent {
       .streamingChatLanguageModel(chatLanguageModel)
       .chatMemory(chatMemory)
       .retrievalAugmentor(retrievalAugmentor)
-      .systemMessageProvider(__ -> sysMessage)
+      .systemMessageProvider(__ -> systemMessage)
       .build();
   }
 
   /**
    * The 'ask' method takes the user question run it through the RAG agent and returns the response as a stream.
    */
-  public Source<StreamedResponse, NotUsed> ask(String userId, String sessionId, String userQuestion) {
+  public Source<StreamedResponse, NotUsed> ask(String userId, String sessionId, String question) {
 
     // we want the SessionEntity id to be unique for each user session,
     // therefore we use a composite key of userId and sessionId
@@ -145,7 +139,7 @@ public class HealthAgent {
     return Source
         .completionStage(assistantFut)
         // once we have the assistant, we run the query and get the response streamed back
-      .flatMapConcat(assistant -> AkkaStreamUtils.toAkkaSource(assistant.chat(userQuestion)))
+      .flatMapConcat(assistant -> AkkaStreamUtils.toAkkaSource(assistant.chat(question)))
         .mapAsync(1, res -> {
 
           if (res.finished()) {// is the last message?
@@ -157,7 +151,7 @@ public class HealthAgent {
             var exchange = new SessionEntity.Exchange(
               userId,
               sessionId,
-              userQuestion, res.inputTokens(),
+              question, res.inputTokens(),
               res.content(), res.outputTokens()
             );
 

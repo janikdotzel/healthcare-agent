@@ -15,7 +15,6 @@ import java.util.concurrent.CompletionStage;
 @HttpEndpoint("/api")
 public class UsersEndpoint {
 
-
   private final ComponentClient componentClient;
 
   public UsersEndpoint(ComponentClient componentClient) {
