@@ -1,11 +1,13 @@
 package io.akka.health.index.api;
 
+import io.akka.health.index.application.MedicalRecordEntity;
 import io.akka.health.index.application.RagIndexingWorkflow;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
+import io.akka.health.index.application.SensorEntity;
 import io.akka.health.index.domain.MedicalRecord;
 import io.akka.health.index.domain.SensorData;
 import org.slf4j.Logger;
@@ -30,32 +32,16 @@ public class HttpEndpoint {
   @Post("/index-sensor")
   public CompletionStage<HttpResponse> indexSensorData(IndexSensorRequest request) {
     return componentClient.forEventSourcedEntity(request.userId)
-            .method(RagIndexingWorkflow::start)
-            .invokeAsync()
+            .method(SensorEntity::addData)
+            .invokeAsync(request.data)
             .thenApply(__ -> HttpResponses.accepted());
   }
 
   @Post("/index-medical-record")
   public CompletionStage<HttpResponse> indexMedicalRecord(IndexMedicalRecordRequest request) {
-    return componentClient.forWorkflow(request.userId)
-            .method(RagIndexingWorkflow::start)
-            .invokeAsync()
+    return componentClient.forEventSourcedEntity(request.userId)
+            .method(MedicalRecordEntity::addData)
+            .invokeAsync(request.data)
             .thenApply(__ -> HttpResponses.accepted());
-  }
-
-  @Post("/start")
-  public CompletionStage<HttpResponse> startIndexation() {
-    return componentClient.forWorkflow("indexing")
-      .method(RagIndexingWorkflow::start)
-      .invokeAsync()
-      .thenApply(__ -> HttpResponses.accepted());
-  }
-
-  @Post("/abort")
-  public CompletionStage<HttpResponse> abortIndexation() {
-    return componentClient.forWorkflow("indexing")
-      .method(RagIndexingWorkflow::abort)
-      .invokeAsync()
-      .thenApply(__ -> HttpResponses.accepted());
   }
 }
