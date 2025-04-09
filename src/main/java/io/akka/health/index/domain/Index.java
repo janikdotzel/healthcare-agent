@@ -50,7 +50,8 @@ public class Index {
   }
 
   public CompletionStage<Done> indexSensorData(SensorData sensorData) {
-    Metadata metadata = Metadata.metadata("source", sensorData.source());
+    Metadata metadata = Metadata.metadata("patientId", sensorData.patientId());
+    metadata.put("source", sensorData.source());
     metadata.put("description", sensorData.description());
     Document document = Document.from(sensorData.value());
     List<TextSegment> segments = splitter.split(document);
