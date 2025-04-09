@@ -1,7 +1,6 @@
 package io.akka.health.index.api;
 
 import io.akka.health.index.application.MedicalRecordEntity;
-import io.akka.health.index.application.RagIndexingWorkflow;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Post;
