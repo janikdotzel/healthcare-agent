@@ -1,22 +1,10 @@
 package io.akka.health.agent;
 
-import akka.Done;
-import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.client.ComponentClient;
-import akka.javasdk.http.HttpResponses;
-import akka.javasdk.http.StrictResponse;
 import akka.javasdk.testkit.TestKitSupport;
-import akka.stream.javadsl.Sink;
 import com.mongodb.client.MongoClients;
 import io.akka.health.agent.application.HealthAgent;
 import io.akka.health.common.KeyUtils;
-import io.akka.health.common.MongoDbUtils;
-import io.akka.health.ingest.api.IngestionEndpoint;
-import io.akka.health.ingest.application.MedicalRecordEntity;
-import io.akka.health.ingest.application.SensorEntity;
-import io.akka.health.ingest.domain.Index;
-import io.akka.health.ingest.domain.MedicalRecord;
-import io.akka.health.ingest.domain.SensorData;
 import io.akka.health.ui.application.SessionEntity;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
@@ -24,12 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**

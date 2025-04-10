@@ -15,14 +15,4 @@ public record MedicalRecord(
         String diagnosis,
         String prescribedMedication,
         String notes) {
-
-    @Override
-    public String toString() {
-        return "MedicalRecord{" +
-                "reasonForVisit='" + reasonForVisit + '\'' +
-                ", diagnosis='" + diagnosis + '\'' +
-                ", prescribedMedication='" + prescribedMedication + '\'' +
-                ", notes='" + notes + '\'' +
-                '}';
-    }
 }

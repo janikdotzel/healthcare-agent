@@ -6,6 +6,7 @@ import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.rag.DefaultRetrievalAugmentor;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
 import io.akka.health.common.AkkaStreamUtils;
 import io.akka.health.common.MongoDbUtils;
@@ -86,6 +87,7 @@ public class HealthAgent {
               .embeddingModel(OpenAiUtils.embeddingModel())
               .maxResults(10)
               .minScore(0.1)
+              .filter(MetadataFilterBuilder.metadataKey("patientId").isEqualTo(userId))
               .build();
       var retrievalAugmenter = DefaultRetrievalAugmentor.builder()
               .contentRetriever(contentRetriever)
