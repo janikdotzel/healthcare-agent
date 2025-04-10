@@ -25,21 +25,10 @@ public class Index {
   private final MongoDbEmbeddingStore embeddingStore;
   private final DocumentSplitter splitter;
 
-  public Index(MongoClient mongoClient, String databaseName, String collectionName, String indexName) {
+  public Index(MongoDbUtils.MongoDbConfig mongoDbConfig) {
     this.embeddingModel = OpenAiUtils.embeddingModel();
-    this.embeddingStore = MongoDbUtils.mongoDbEmbeddingStore(
-      mongoClient,
-      databaseName,
-      collectionName,
-      indexName);
+    this.embeddingStore = MongoDbUtils.mongoDbEmbeddingStore(mongoDbConfig);
     this.splitter = new DocumentByCharacterSplitter(500, 50, OpenAiUtils.buildTokenizer());
-  }
-
-  public static Index createForMedicalRecord(MongoClient mongoClient) {
-      String databaseName = "health";
-      String collectionName = "medicalrecord";
-      String indexName = "medicalrecord-ingest";
-      return new Index(mongoClient, databaseName, collectionName, indexName);
   }
 
   public CompletionStage<Done> indexMedicalRecord(MedicalRecord medicalRecord) {

@@ -27,7 +27,7 @@ public class SessionEntity extends EventSourcedEntity<SessionEntity.State, Sessi
           String assistantResponse,
           int responseTokensCount) {}
 
-  enum MessageType {
+  public enum MessageType {
     ASSISTANT,
     USER
   }

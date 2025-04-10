@@ -1,7 +1,7 @@
 package io.akka.health.agent.api;
 
 import io.akka.health.agent.application.HealthAgent;
-import io.akka.health.agent.util.StreamedResponse;
+import io.akka.health.common.StreamedResponse;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;

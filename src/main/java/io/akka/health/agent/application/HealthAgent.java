@@ -2,22 +2,21 @@ package io.akka.health.agent.application;
 
 import akka.Done;
 import akka.NotUsed;
-import io.akka.health.agent.util.AkkaStreamUtils;
-import io.akka.health.agent.util.StreamedResponse;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.rag.DefaultRetrievalAugmentor;
+import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
+import dev.langchain4j.service.AiServices;
+import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
+import io.akka.health.common.AkkaStreamUtils;
 import io.akka.health.common.MongoDbUtils;
 import io.akka.health.common.OpenAiUtils;
+import io.akka.health.common.StreamedResponse;
 import akka.javasdk.client.ComponentClient;
 import akka.stream.javadsl.Source;
 import com.mongodb.client.MongoClient;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.memory.chat.MessageWindowChatMemory;
-import dev.langchain4j.rag.DefaultRetrievalAugmentor;
-import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
-import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.TokenStream;
-import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
 import io.akka.health.ui.application.SessionEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Supplier;
 
 /**
  * This services works as an interface to the AI.
@@ -45,8 +45,7 @@ public class HealthAgent {
 
   private final static Logger logger = LoggerFactory.getLogger(HealthAgent.class);
   private final ComponentClient componentClient;
-  private final MongoClient mongoClient;
-
+  private final MongoDbUtils.MongoDbConfig mongoDbConfig;
   private final String systemMessage = """
     You are a very enthusiastic Akka representative who loves to help people!
     Given the following sections from the Akka SDK documentation, answer the question using only that information, outputted in markdown format. 
@@ -54,112 +53,84 @@ public class HealthAgent {
     Sorry, I don't know how to help with that.
     """;
 
-  interface Assistant {
-    TokenStream chat(String message);
-  }
-
   public HealthAgent(ComponentClient componentClient, MongoClient mongoClient) {
     this.componentClient = componentClient;
-    this.mongoClient = mongoClient;
+    this.mongoDbConfig = new MongoDbUtils.MongoDbConfig(
+        mongoClient,
+        "health",
+        "medicalrecord",
+        "medicalrecord-index");
   }
 
-  private CompletionStage<Done> addExchange(String compositeEntityId, SessionEntity.Exchange conversation) {
-    return componentClient
-      .forEventSourcedEntity(compositeEntityId)
-      .method(SessionEntity::addExchange)
-      .invokeAsync(conversation);
-  }
-
-  private CompletionStage<List<ChatMessage>> fetchHistory(String  entityId) {
-    return componentClient
-        .forEventSourcedEntity( entityId)
-        .method(SessionEntity::getHistory).invokeAsync()
-        .thenApply(messages -> messages.messages().stream().map(this::toChatMessage).toList());
-  }
-
-  private ChatMessage toChatMessage(SessionEntity.Message msg) {
-    return switch (msg.type()) {
-      case ASSISTANT -> new AiMessage(msg.content());
-      case USER -> new UserMessage(msg.content());
-    };
-  }
-
-  /**
-   * This method build the RAG setup using LangChain4j APIs.
-   */
-  private Assistant createAssistant(String sessionId,  List<ChatMessage> messages) {
-
-    var chatLanguageModel = OpenAiUtils.streamingChatModel();
-
-    var contentRetriever = EmbeddingStoreContentRetriever.builder()
-      .embeddingStore(MongoDbUtils.embeddingStore(mongoClient))
-      .embeddingModel(OpenAiUtils.embeddingModel())
-      .maxResults(10)
-      .minScore(0.1)
-      .build();
-
-    var retrievalAugmentor =
-      DefaultRetrievalAugmentor.builder()
-        .contentRetriever(contentRetriever)
-        .build();
-
-    var chatMemoryStore = new InMemoryChatMemoryStore();
-    chatMemoryStore.updateMessages(sessionId, messages);
-
-
-    var chatMemory  = MessageWindowChatMemory.builder()
-      .maxMessages(2000)
-      .chatMemoryStore(chatMemoryStore)
-      .build();
-
-    return AiServices.builder(Assistant.class)
-      .streamingChatLanguageModel(chatLanguageModel)
-      .chatMemory(chatMemory)
-      .retrievalAugmentor(retrievalAugmentor)
-      .systemMessageProvider(__ -> systemMessage)
-      .build();
-  }
-
-  /**
-   * The 'ask' method takes the user question run it through the RAG agent and returns the response as a stream.
-   */
+    /**
+     * This method is the main entry point for the agent.
+     * It takes a userId, sessionId and a question and returns a stream of responses.
+     *
+     * @param userId    The user id
+     * @param sessionId The session id
+     * @param question  The question to ask
+     * @return A stream of responses
+     */
   public Source<StreamedResponse, NotUsed> ask(String userId, String sessionId, String question) {
 
     // we want the SessionEntity id to be unique for each user session,
     // therefore we use a composite key of userId and sessionId
     var compositeEntityId = userId + ":" + sessionId;
 
-    // we fetch the history (if any) and create the assistant
-    // note that both calls are async, once we have the history,
-    // we can build the assistant using the previous chat memory
-    var assistantFut =
-      fetchHistory(sessionId)
-        .thenApply(messages -> createAssistant(sessionId, messages));
+    // Fetch chat messages by looking up the session
+    var sessionHistoryFuture = fetchSessionHistory(sessionId);
 
-    // below we take the assistant future and build a Source to stream out the response
-    return Source
-        .completionStage(assistantFut)
-        // once we have the assistant, we run the query and get the response streamed back
+    // Assemble the langchain assistant
+    var assistantFuture = sessionHistoryFuture.thenApply(messages -> {
+      // Set up a langchain retriever to search for relevant medical records
+      var contentRetriever = EmbeddingStoreContentRetriever.builder()
+              .embeddingStore(MongoDbUtils.embeddingStore(mongoDbConfig))
+              .embeddingModel(OpenAiUtils.embeddingModel())
+              .maxResults(10)
+              .minScore(0.1)
+              .build();
+      var retrievalAugmenter = DefaultRetrievalAugmentor.builder()
+              .contentRetriever(contentRetriever)
+              .build();
+
+      // TODO: Make Sensor Data available through a tool call
+
+      // Create the chat memory and fill it with the messages
+      var chatMemoryStore = new InMemoryChatMemoryStore();
+      chatMemoryStore.updateMessages(sessionId, messages);
+      var chatMemory = MessageWindowChatMemory.builder()
+              .maxMessages(2000)
+              .chatMemoryStore(chatMemoryStore)
+              .build();
+
+      // Create the langchain assistant
+      return AiServices.builder(RagAssistant.class)
+              .systemMessageProvider(__ -> systemMessage)
+              .streamingChatLanguageModel(OpenAiUtils.streamingChatModel())
+              .chatMemory(chatMemory)
+              .retrievalAugmentor(retrievalAugmenter)
+              .build();
+    });
+
+    // Build an akka source
+    return Source.completionStage(assistantFuture)
+      // Call the llm and get the response streamed back
       .flatMapConcat(assistant -> AkkaStreamUtils.toAkkaSource(assistant.chat(question)))
         .mapAsync(1, res -> {
-
-          if (res.finished()) {// is the last message?
+          if (res.finished()) { // is the last message?
             logger.debug("Exchange finished. Total input tokens {}, total output tokens {}", res.inputTokens(), res.outputTokens());
 
-            // when we have a finished response, we are ready to save the exchange to the SessionEntity
-            // note that the exchange is saved atomically in a single command
-            // since the pair question/answer belong together
+            // when we have a finished response, we save the exchange to the SessionEntity
             var exchange = new SessionEntity.Exchange(
               userId,
               sessionId,
               question, res.inputTokens(),
-              res.content(), res.outputTokens()
-            );
+              res.content(), res.outputTokens());
 
             // since the full response has already been streamed,
             // the last message can be transformed to an empty message
-            return addExchange(compositeEntityId, exchange)
-              .thenApply(__ -> StreamedResponse.empty());
+            return addExchangeToSession(compositeEntityId, exchange)
+                    .thenApply(__ -> StreamedResponse.empty());
           }
           else {
             logger.debug("partial message '{}'", res.content());
@@ -168,7 +139,27 @@ public class HealthAgent {
             return CompletableFuture.completedFuture(res);
           }
         });
-
   }
 
+  private CompletionStage<Done> addExchangeToSession(String compositeEntityId, SessionEntity.Exchange conversation) {
+    return componentClient
+            .forEventSourcedEntity(compositeEntityId)
+            .method(SessionEntity::addExchange)
+            .invokeAsync(conversation);
+  }
+
+  private CompletionStage<List<ChatMessage>> fetchSessionHistory(String sessionId) {
+    return componentClient
+            .forEventSourcedEntity(sessionId)
+            .method(SessionEntity::getHistory).invokeAsync()
+            .thenApply(messages -> messages.messages().stream()
+                    .map(this::toChatMessage).toList());
+  }
+
+  private ChatMessage toChatMessage(SessionEntity.Message msg) {
+    return switch (msg.type()) {
+      case ASSISTANT -> new AiMessage(msg.content());
+      case USER -> new UserMessage(msg.content());
+    };
+  }
 }

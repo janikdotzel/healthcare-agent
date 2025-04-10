@@ -1,4 +1,4 @@
-package io.akka.health.agent.util;
+package io.akka.health.common;
 
 import akka.NotUsed;
 import akka.stream.javadsl.Source;

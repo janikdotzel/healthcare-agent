@@ -19,9 +19,7 @@ public class Bootstrap implements ServiceSetup {
   private final MongoClient mongoClient;
   private final ComponentClient componentClient;
 
-  public Bootstrap(
-    ComponentClient componentClient,
-    Materializer materializer) {
+  public Bootstrap(ComponentClient componentClient) {
 
     if (!KeyUtils.hasValidKeys()) {
       throw new IllegalStateException(
