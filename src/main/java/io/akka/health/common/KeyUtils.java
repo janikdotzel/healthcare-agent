@@ -34,9 +34,9 @@ public class KeyUtils {
     if (value == null) {
       var properties = new Properties();
 
-      try (InputStream in = Bootstrap.class.getClassLoader().getResourceAsStream(".env.local")) {
+      try (InputStream in = Bootstrap.class.getClassLoader().getResourceAsStream(".env")) {
 
-        if (in == null) throw new IllegalStateException("No .env.local file found");
+        if (in == null) throw new IllegalStateException("No .env file found");
         else properties.load(in);
 
         return properties.getProperty(key);
