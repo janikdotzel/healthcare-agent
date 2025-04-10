@@ -29,7 +29,7 @@ public class SensorEntity extends EventSourcedEntity<SensorEntity.State, SensorE
 
   @Override
   public SensorEntity.State emptyState() {
-    return new SensorEntity.State(entityId, Collections.emptyList());
+    return new SensorEntity.State(entityId, List.of());
   }
 
   public Effect<Done> addData(SensorData data) {
@@ -48,7 +48,7 @@ public class SensorEntity extends EventSourcedEntity<SensorEntity.State, SensorE
   public SensorEntity.State applyEvent(SensorEntity.Event event) {
     return switch (event) {
       case SensorEntity.Event.Added added -> {
-        var newData = currentState().data();
+        var newData = new java.util.ArrayList<>(currentState().data());
         newData.add(added.data);
         yield new SensorEntity.State(currentState().id(), newData);
       }
