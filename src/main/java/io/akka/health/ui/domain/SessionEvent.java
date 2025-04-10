@@ -1,4 +1,4 @@
-package io.akka.health.agent.domain;
+package io.akka.health.ui.domain;
 
 import java.time.Instant;
 import akka.javasdk.annotations.TypeName;

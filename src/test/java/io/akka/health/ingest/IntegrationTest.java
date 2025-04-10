@@ -27,10 +27,6 @@ import akka.javasdk.testkit.TestKitSupport;
  */
 public class IntegrationTest extends TestKitSupport {
 
-  // TODO split it up into different test classes in different packages
-
-  // ----------------- Ingestion Tests -----------------
-
   @Test
   public void testSensorEntity() {
     String userId = "user-1";
@@ -134,15 +130,4 @@ public class IntegrationTest extends TestKitSupport {
 
     Assertions.assertNotNull(response);
   }
-
-
-  // ----------------- Agent Tests -----------------
-
-    // Ask gets a successful reply
-      // Assert that previous messages from the session are used
-      // Assert that the AI queries sensor data via a tool call
-      // Assert that medical records are augmented via RAG
-      // Assert that the AI has been called
-
-
 }

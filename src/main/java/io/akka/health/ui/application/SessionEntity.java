@@ -1,7 +1,7 @@
 package io.akka.health.ui.application;
 
 import akka.Done;
-import io.akka.health.agent.domain.SessionEvent;
+import io.akka.health.ui.domain.SessionEvent;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;

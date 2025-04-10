@@ -47,10 +47,8 @@ public class HealthAgent {
   private final ComponentClient componentClient;
   private final MongoDbUtils.MongoDbConfig mongoDbConfig;
   private final String systemMessage = """
-    You are a very enthusiastic Akka representative who loves to help people!
-    Given the following sections from the Akka SDK documentation, answer the question using only that information, outputted in markdown format. 
-    If you are unsure and the text is not explicitly written in the documentation, say:
-    Sorry, I don't know how to help with that.
+    You are a medical assistant that helps the doctor to answer questions about the patient.
+    Given the following medical records, answer the question.
     """;
 
   public HealthAgent(ComponentClient componentClient, MongoClient mongoClient) {
@@ -78,7 +76,7 @@ public class HealthAgent {
     var compositeEntityId = userId + ":" + sessionId;
 
     // Fetch chat messages by looking up the session
-    var sessionHistoryFuture = fetchSessionHistory(sessionId);
+    var sessionHistoryFuture = fetchSessionHistory(compositeEntityId);
 
     // Assemble the langchain assistant
     var assistantFuture = sessionHistoryFuture.thenApply(messages -> {
@@ -97,7 +95,7 @@ public class HealthAgent {
 
       // Create the chat memory and fill it with the messages
       var chatMemoryStore = new InMemoryChatMemoryStore();
-      chatMemoryStore.updateMessages(sessionId, messages);
+      chatMemoryStore.updateMessages(compositeEntityId, messages);
       var chatMemory = MessageWindowChatMemory.builder()
               .maxMessages(2000)
               .chatMemoryStore(chatMemoryStore)
