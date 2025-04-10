@@ -1,4 +1,4 @@
-package io.akka;
+package io.akka.health.ingest;
 
 import akka.Done;
 import akka.http.javadsl.model.HttpResponse;
