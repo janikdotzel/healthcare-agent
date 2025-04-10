@@ -47,7 +47,7 @@ public class MedicalRecordEntity extends EventSourcedEntity<MedicalRecordEntity.
   public MedicalRecordEntity.State applyEvent(MedicalRecordEntity.Event event) {
     return switch (event) {
       case MedicalRecordEntity.Event.Added added -> {
-        var newData = currentState().data();
+        var newData = new java.util.ArrayList<>(currentState().data());
         newData.add(added.data);
         yield new MedicalRecordEntity.State(currentState().id(), newData);
       }

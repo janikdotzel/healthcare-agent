@@ -18,8 +18,8 @@ import java.util.concurrent.CompletionStage;
 @akka.javasdk.annotations.http.HttpEndpoint("/ingest")
 public class IngestionEndpoint {
 
-  public record IndexSensorRequest(String userId, SensorData data) {}
-  public record IndexMedicalRecordRequest(String userId, MedicalRecord data) {}
+  public record IngestSensorRequest(String userId, SensorData data) {}
+  public record IngestMedicalRecordRequest(String userId, MedicalRecord data) {}
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
   private final ComponentClient componentClient;
@@ -29,7 +29,8 @@ public class IngestionEndpoint {
   }
 
   @Post("/sensor")
-  public CompletionStage<HttpResponse> ingestSensorData(IndexSensorRequest request) {
+  public CompletionStage<HttpResponse> ingestSensorData(IngestSensorRequest request) {
+    logger.info("Received sensor data for user {}: {}", request.userId, request.data);
     return componentClient.forEventSourcedEntity(request.userId)
             .method(SensorEntity::addData)
             .invokeAsync(request.data)
@@ -37,7 +38,8 @@ public class IngestionEndpoint {
   }
 
   @Post("/medical-record")
-  public CompletionStage<HttpResponse> ingestMedicalRecord(IndexMedicalRecordRequest request) {
+  public CompletionStage<HttpResponse> ingestMedicalRecord(IngestMedicalRecordRequest request) {
+    logger.info("Received medical record for user {}: {}", request.userId, request.data);
     return componentClient.forEventSourcedEntity(request.userId)
             .method(MedicalRecordEntity::addData)
             .invokeAsync(request.data)
