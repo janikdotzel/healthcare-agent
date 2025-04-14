@@ -87,6 +87,7 @@ public class HealthAgent {
               .embeddingModel(OpenAiUtils.embeddingModel())
               .maxResults(10)
               .minScore(0.1)
+              // Currently the patientId must equal the userId
               .filter(MetadataFilterBuilder.metadataKey("patientId").isEqualTo(userId))
               .build();
       var retrievalAugmenter = DefaultRetrievalAugmentor.builder()

@@ -121,7 +121,7 @@ public class IntegrationTest extends TestKitSupport {
     Index index = new Index(mongoDbconfig);
 
     MedicalRecord medicalRecord = new MedicalRecord(
-            "patient-1",
+            "user-1",
             "Severe lower back pain",
             "Pinched nerve",
             "Ibuprofen and massage therapy",

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -39,7 +40,8 @@ public class IntegrationTest extends TestKitSupport {
         var question = "What is the reason for the patient's visit?";
         var streamResponse = agent.ask(userId, sessionId, question);
         var answer = await(
-                streamResponse.runFold("", (acc, partial) -> acc + partial.content(), testKit.getMaterializer()));
+                streamResponse.runFold("", (acc, partial) -> acc + partial.content(), testKit.getMaterializer()),
+                Duration.ofSeconds(30));
         logger.info("Question: {}", question);
         logger.info("Answer: {}", answer);
 
