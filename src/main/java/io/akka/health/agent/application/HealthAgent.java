@@ -128,6 +128,8 @@ public class HealthAgent {
               question, res.inputTokens(),
               res.content(), res.outputTokens());
 
+            logger.info("Complete Response: {}", res.content());
+
             // since the full response has already been streamed,
             // the last message can be transformed to an empty message
             return addExchangeToSession(compositeEntityId, exchange)
