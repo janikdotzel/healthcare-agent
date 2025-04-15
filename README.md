@@ -58,7 +58,12 @@ mvn compile exec:java
 
 The endpoint is available at:
 ```shell
-curl http://localhost:9000/hello
+curl http://localhost:9000/
+```
+
+Open the Akka Local Console
+```shell
+akka local console
 ```
 
 Build container image:
