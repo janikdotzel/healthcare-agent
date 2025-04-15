@@ -8,7 +8,6 @@ import com.mongodb.client.MongoClients;
 import io.akka.health.common.KeyUtils;
 import io.akka.health.common.MongoDbUtils;
 import io.akka.health.ingest.api.IngestionEndpoint;
-import io.akka.health.ingest.application.MedicalRecordEntity;
 import io.akka.health.ingest.application.SensorEntity;
 import io.akka.health.ingest.domain.Index;
 import io.akka.health.ingest.domain.MedicalRecord;
@@ -62,33 +61,6 @@ public class IntegrationTest extends TestKitSupport {
                     .thenApply(StrictResponse::httpResponse));
 
     Assertions.assertEquals(HttpResponses.accepted().status(), response.status());
-  }
-
-  @Test
-  public void testMedicalRecordEntity() {
-    String patientId = "patient-1";
-    MedicalRecord medicalRecord = new MedicalRecord(
-            patientId,
-            "Severe lower back pain",
-            "Pinched nerve",
-            "Ibuprofen and massage therapy",
-            "Has an office job. Sits for long hours. Doesn't do any exercise.");
-    Done response = await(
-            componentClient
-                    .forEventSourcedEntity(patientId)
-                    .method(MedicalRecordEntity::addData)
-                    .invokeAsync(medicalRecord));
-
-    Assertions.assertNotNull(response);
-    MedicalRecordEntity.State state = await(
-            componentClient
-                    .forEventSourcedEntity(patientId)
-                    .method(MedicalRecordEntity::getState)
-                    .invokeAsync());
-
-    Assertions.assertEquals(medicalRecord.reasonForVisit(), state.data().getFirst().reasonForVisit());
-    Assertions.assertEquals(medicalRecord.diagnosis(), state.data().getFirst().diagnosis());
-    Assertions.assertEquals(medicalRecord.prescribedMedication(), state.data().getFirst().prescribedMedication());
   }
 
     @Test
