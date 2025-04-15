@@ -75,44 +75,11 @@ public class HealthAgent {
     // therefore we use a composite key of userId and sessionId
     var compositeEntityId = userId + ":" + sessionId;
 
-    // Fetch chat messages by looking up the session
     var sessionHistoryFuture = fetchSessionHistory(compositeEntityId);
 
-    // Assemble the langchain assistant
-    var assistantFuture = sessionHistoryFuture.thenApply(messages -> {
-      // Set up a langchain retriever to search for relevant medical records
-      var contentRetriever = EmbeddingStoreContentRetriever.builder()
-              .embeddingStore(MongoDbUtils.embeddingStore(mongoDbConfig))
-              .embeddingModel(OpenAiUtils.embeddingModel())
-              .maxResults(10)
-              .minScore(0.1)
-              // Currently the patientId must equal the userId
-              .filter(MetadataFilterBuilder.metadataKey("patientId").isEqualTo(userId))
-              .build();
-      var retrievalAugmenter = DefaultRetrievalAugmentor.builder()
-              .contentRetriever(contentRetriever)
-              .build();
+    var assistantFuture = sessionHistoryFuture.thenApply(messages ->
+            RagAssistant.create(compositeEntityId, userId, messages, systemMessage, mongoDbConfig, componentClient));
 
-      // TODO: Make Sensor Data available through a tool call
-
-      // Create the chat memory and fill it with the messages
-      var chatMemoryStore = new InMemoryChatMemoryStore();
-      chatMemoryStore.updateMessages(compositeEntityId, messages);
-      var chatMemory = MessageWindowChatMemory.builder()
-              .maxMessages(2000)
-              .chatMemoryStore(chatMemoryStore)
-              .build();
-
-      // Create the langchain assistant
-      return AiServices.builder(RagAssistant.class)
-              .systemMessageProvider(__ -> systemMessage)
-              .streamingChatLanguageModel(OpenAiUtils.streamingChatModel())
-              .chatMemory(chatMemory)
-              .retrievalAugmentor(retrievalAugmenter)
-              .build();
-    });
-
-    // Build an akka source
     return Source.completionStage(assistantFuture)
       // Call the llm and get the response streamed back
       .flatMapConcat(assistant -> AkkaStreamUtils.toAkkaSource(assistant.chat(question)))
@@ -143,9 +110,9 @@ public class HealthAgent {
         });
   }
 
-  private CompletionStage<Done> addExchangeToSession(String compositeEntityId, SessionEntity.Exchange conversation) {
+  private CompletionStage<Done> addExchangeToSession(String sessionId, SessionEntity.Exchange conversation) {
     return componentClient
-            .forEventSourcedEntity(compositeEntityId)
+            .forEventSourcedEntity(sessionId)
             .method(SessionEntity::addExchange)
             .invokeAsync(conversation);
   }
