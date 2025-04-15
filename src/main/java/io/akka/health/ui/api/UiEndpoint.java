@@ -13,6 +13,6 @@ import akka.javasdk.http.HttpResponses;
 public class UiEndpoint {
   @Get("/")
   public HttpResponse index() {
-    return HttpResponses.staticResource("ingest.html");
+    return HttpResponses.staticResource("index.html");
   }
 }

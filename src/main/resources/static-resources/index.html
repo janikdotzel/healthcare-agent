@@ -395,7 +395,7 @@
     const fetchSessions = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/users/${userId}/sessions`);
+        const response = await fetch(`/session/${userId}`);
 
         if (!response.ok) {
           throw new Error(`HTTP error ${response.status}`);
@@ -610,7 +610,7 @@
         };
 
         // Call the backend API with SSE support
-        const response = await fetch('/api/ask', {
+        const response = await fetch('/agent/ask', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
