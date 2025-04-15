@@ -11,7 +11,7 @@ import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
 import io.akka.health.common.AkkaStreamUtils;
 import io.akka.health.common.MongoDbUtils;
 import io.akka.health.common.OpenAiUtils;
-import io.akka.health.common.StreamedResponse;
+import io.akka.health.agent.domain.StreamedResponse;
 import akka.javasdk.client.ComponentClient;
 import akka.stream.javadsl.Source;
 import com.mongodb.client.MongoClient;
@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Supplier;
 
 /**
  * This services works as an interface to the AI.

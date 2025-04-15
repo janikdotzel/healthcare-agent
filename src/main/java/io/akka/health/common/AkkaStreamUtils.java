@@ -3,6 +3,7 @@ package io.akka.health.common;
 import akka.NotUsed;
 import akka.stream.javadsl.Source;
 import dev.langchain4j.service.TokenStream;
+import io.akka.health.agent.domain.StreamedResponse;
 
 
 public class AkkaStreamUtils {

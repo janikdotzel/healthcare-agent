@@ -1,6 +1,5 @@
 package io.akka.health.agent.application;
 
-import com.mongodb.client.MongoClient;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.rag.DefaultRetrievalAugmentor;
