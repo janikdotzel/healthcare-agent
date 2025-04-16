@@ -46,27 +46,53 @@ A web application will act as a personal healthcare agent, integrating data from
 
 ## Usage
 
-Use Maven to build your project:
-```shell
-mvn compile
-```
-
-To start your service locally, run:
+Start the service locally:
 ```shell
 mvn compile exec:java
 ```
 
-The endpoint is available at:
+The chat is available at:
 ```shell
 curl http://localhost:9000/
 ```
 
-Open the Akka Local Console
+Optionally, you can use the open-webui:
+```shell
+open-webui serve
+```
+
+Open the Akka Local Console for monitoring:
 ```shell
 akka local console
 ```
 
-Build container image:
+## Testing
+
+Add Medical Records with the following command:
 ```shell
-mvn clean install -DskipTests
+curl -X POST http://localhost:9000/ingest/medical-record -H "Content-Type: application/json" -d '{
+  "userId": "user-2",
+  "data": {
+    "patientId": "user-2",
+    "reasonForVisit": "Routine check-up",
+    "diagnosis": "Healthy",
+    "prescribedMedication": "None",
+    "notes": "No issues reported"
+  }
+}'
+```
+
+Add Sensor Data with the following command:
+```shell
+curl -X POST http://localhost:9000/ingest/sensor -H "Content-Type: application/json" -d '{
+  "userId": "user-2",
+  "data": {
+    "userId": "user-2",
+    "source": "smartwatch",
+    "description": "heart rate",
+    "value": "88 bpm"
+  }
+}'
+
+
 ```
