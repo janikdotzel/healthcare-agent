@@ -1,5 +1,6 @@
 package io.akka.health.ingest.api;
 
+import com.mongodb.client.MongoClient;
 import io.akka.health.common.MongoDbUtils;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
@@ -26,9 +27,13 @@ public class IngestionEndpoint {
   private final ComponentClient componentClient;
     private final MongoDbUtils.MongoDbConfig mongoDbConfig;
 
-  public IngestionEndpoint(ComponentClient componentClient, MongoDbUtils.MongoDbConfig mongoDbConfig) {
+  public IngestionEndpoint(ComponentClient componentClient, MongoClient mongoClient ) {
     this.componentClient = componentClient;
-    this.mongoDbConfig = mongoDbConfig;
+    this.mongoDbConfig = new MongoDbUtils.MongoDbConfig(
+            mongoClient,
+            "health",
+            "medicalrecord",
+            "medicalrecord-index");
   }
 
   @Post("/sensor")
