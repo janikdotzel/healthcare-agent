@@ -93,6 +93,12 @@ curl -X POST http://localhost:9000/ingest/sensor -H "Content-Type: application/j
     "value": "88 bpm"
   }
 }'
-
-
 ```
+
+# Agentic Blueprint on the Healthcare AI Agent
+
+## Components
+- Streaming Endpoints: Respond quickly. Process inputs and respond partially without waiting for the entire input to be processed.
+- Context Database: LLMs are stateless. We store and retrieve the context of each session.
+- Agent Orchestration: Execute reliably. Durable workflows that ensure agent actions and LLM calls execute reliably, even in the face of failures, timeouts, hallucinations, or restarts.
+- Agent Connectors: Talk to LLMs, vector dbs, mcp servers, enterprise APIs and other systems
