@@ -16,6 +16,21 @@ public class KeyUtils {
     return readKey("OPENAI_API_KEY");
   }
 
+  public static String readFitbitClientId() {
+    return readKey("FITBIT_CLIENT_ID");
+  }
+
+  public static String readFitbitClientSecret() {
+    return readKey("FITBIT_CLIENT_SECRET");
+  }
+
+  public static boolean hasFitbitKeys() {
+    try {
+      return !readFitbitClientId().isEmpty() && !readFitbitClientSecret().isEmpty();
+    } catch (Exception e) {
+      return false;
+    }
+  }
 
   public static boolean hasValidKeys() {
     try {
