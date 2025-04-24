@@ -6,6 +6,8 @@ import akka.http.javadsl.model.*;
 import akka.http.javadsl.unmarshalling.Unmarshaller;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fitbit.model.*;
+import fitbit.parser.FitbitParser;
 import io.akka.health.common.KeyUtils;
 
 import java.net.URLEncoder;
@@ -31,6 +33,7 @@ public class FitbitClient {
     private final ActorSystem system;
     private final Http http;
     private final ObjectMapper objectMapper;
+    private final FitbitParser parser;
     private final String clientId;
     private final String clientSecret;
 
@@ -42,6 +45,7 @@ public class FitbitClient {
         this.system = system;
         this.http = Http.get(system);
         this.objectMapper = new ObjectMapper();
+        this.parser = new FitbitParser();
         this.clientId = KeyUtils.readFitbitClientId();
         this.clientSecret = KeyUtils.readFitbitClientSecret();
 
@@ -161,7 +165,7 @@ public class FitbitClient {
      * @param date The date to get heart rate data for.
      * @return A CompletionStage that completes with the heart rate data.
      */
-    public CompletionStage<String> getHeartRateByDate(LocalDate date) {
+    public CompletionStage<HeartRateData> getHeartRateByDate(LocalDate date) {
         return ensureValidToken().thenCompose(valid -> {
             String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
             String url = API_BASE_URL + "/1/user/-/activities/heart/date/" + dateStr + "/1d.json";
@@ -173,12 +177,19 @@ public class FitbitClient {
                     .thenCompose(response -> {
                         if (response.status().isSuccess()) {
                             return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String());
+                                    .thenApply(strict -> strict.getData().utf8String())
+                                    .thenApply(json -> {
+                                        try {
+                                            return parser.parseHeartRateData(json);
+                                        } catch (Exception e) {
+                                            throw new RuntimeException("Failed to parse heart rate data", e);
+                                        }
+                                    });
                         } else {
                             return response.entity().toStrict(10000, system)
                                     .thenApply(strict -> strict.getData().utf8String())
                                     .thenCompose(body -> {
-                                        CompletableFuture<String> future = new CompletableFuture<>();
+                                        CompletableFuture<HeartRateData> future = new CompletableFuture<>();
                                         future.completeExceptionally(new RuntimeException(
                                                 "Failed to get heart rate data: " + response.status() + " - " + body));
                                         return future;
@@ -194,7 +205,7 @@ public class FitbitClient {
      * @param date The date to get Active Zone Minutes data for.
      * @return A CompletionStage that completes with the Active Zone Minutes data.
      */
-    public CompletionStage<String> getActiveZoneMinutesByDate(LocalDate date) {
+    public CompletionStage<ActiveZoneMinutesData> getActiveZoneMinutesByDate(LocalDate date) {
         return ensureValidToken().thenCompose(valid -> {
             String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
             String url = API_BASE_URL + "/1/user/-/activities/active-zone-minutes/date/" + dateStr + "/1d.json";
@@ -206,12 +217,19 @@ public class FitbitClient {
                     .thenCompose(response -> {
                         if (response.status().isSuccess()) {
                             return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String());
+                                    .thenApply(strict -> strict.getData().utf8String())
+                                    .thenApply(json -> {
+                                        try {
+                                            return parser.parseActiveZoneMinutesData(json);
+                                        } catch (Exception e) {
+                                            throw new RuntimeException("Failed to parse Active Zone Minutes data", e);
+                                        }
+                                    });
                         } else {
                             return response.entity().toStrict(10000, system)
                                     .thenApply(strict -> strict.getData().utf8String())
                                     .thenCompose(body -> {
-                                        CompletableFuture<String> future = new CompletableFuture<>();
+                                        CompletableFuture<ActiveZoneMinutesData> future = new CompletableFuture<>();
                                         future.completeExceptionally(new RuntimeException(
                                                 "Failed to get Active Zone Minutes data: " + response.status() + " - " + body));
                                         return future;
@@ -227,7 +245,7 @@ public class FitbitClient {
      * @param date The date to get sleep log data for.
      * @return A CompletionStage that completes with the sleep log data.
      */
-    public CompletionStage<String> getSleepLogByDate(LocalDate date) {
+    public CompletionStage<SleepLogData> getSleepLogByDate(LocalDate date) {
         return ensureValidToken().thenCompose(valid -> {
             String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
             String url = API_BASE_URL + "/1.2/user/-/sleep/date/" + dateStr + ".json";
@@ -239,12 +257,19 @@ public class FitbitClient {
                     .thenCompose(response -> {
                         if (response.status().isSuccess()) {
                             return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String());
+                                    .thenApply(strict -> strict.getData().utf8String())
+                                    .thenApply(json -> {
+                                        try {
+                                            return parser.parseSleepLogData(json);
+                                        } catch (Exception e) {
+                                            throw new RuntimeException("Failed to parse sleep log data", e);
+                                        }
+                                    });
                         } else {
                             return response.entity().toStrict(10000, system)
                                     .thenApply(strict -> strict.getData().utf8String())
                                     .thenCompose(body -> {
-                                        CompletableFuture<String> future = new CompletableFuture<>();
+                                        CompletableFuture<SleepLogData> future = new CompletableFuture<>();
                                         future.completeExceptionally(new RuntimeException(
                                                 "Failed to get sleep log data: " + response.status() + " - " + body));
                                         return future;
@@ -260,7 +285,7 @@ public class FitbitClient {
      * @param date The date to get weight log data for.
      * @return A CompletionStage that completes with the weight log data.
      */
-    public CompletionStage<String> getWeightLogByDate(LocalDate date) {
+    public CompletionStage<WeightLogData> getWeightLogByDate(LocalDate date) {
         return ensureValidToken().thenCompose(valid -> {
             String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
             String url = API_BASE_URL + "/1/user/-/body/log/weight/date/" + dateStr + ".json";
@@ -272,12 +297,19 @@ public class FitbitClient {
                     .thenCompose(response -> {
                         if (response.status().isSuccess()) {
                             return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String());
+                                    .thenApply(strict -> strict.getData().utf8String())
+                                    .thenApply(json -> {
+                                        try {
+                                            return parser.parseWeightLogData(json);
+                                        } catch (Exception e) {
+                                            throw new RuntimeException("Failed to parse weight log data", e);
+                                        }
+                                    });
                         } else {
                             return response.entity().toStrict(10000, system)
                                     .thenApply(strict -> strict.getData().utf8String())
                                     .thenCompose(body -> {
-                                        CompletableFuture<String> future = new CompletableFuture<>();
+                                        CompletableFuture<WeightLogData> future = new CompletableFuture<>();
                                         future.completeExceptionally(new RuntimeException(
                                                 "Failed to get weight log data: " + response.status() + " - " + body));
                                         return future;
@@ -293,7 +325,7 @@ public class FitbitClient {
      * @param date The date to get activity summary for.
      * @return A CompletionStage that completes with the activity summary data.
      */
-    public CompletionStage<String> getDailyActivitySummary(LocalDate date) {
+    public CompletionStage<DailyActivitySummary> getDailyActivitySummary(LocalDate date) {
         return ensureValidToken().thenCompose(valid -> {
             String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
             String url = API_BASE_URL + "/1/user/-/activities/date/" + dateStr + ".json";
@@ -305,12 +337,19 @@ public class FitbitClient {
                     .thenCompose(response -> {
                         if (response.status().isSuccess()) {
                             return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String());
+                                    .thenApply(strict -> strict.getData().utf8String())
+                                    .thenApply(json -> {
+                                        try {
+                                            return parser.parseDailyActivitySummary(json);
+                                        } catch (Exception e) {
+                                            throw new RuntimeException("Failed to parse daily activity summary", e);
+                                        }
+                                    });
                         } else {
                             return response.entity().toStrict(10000, system)
                                     .thenApply(strict -> strict.getData().utf8String())
                                     .thenCompose(body -> {
-                                        CompletableFuture<String> future = new CompletableFuture<>();
+                                        CompletableFuture<DailyActivitySummary> future = new CompletableFuture<>();
                                         future.completeExceptionally(new RuntimeException(
                                                 "Failed to get daily activity summary: " + response.status() + " - " + body));
                                         return future;

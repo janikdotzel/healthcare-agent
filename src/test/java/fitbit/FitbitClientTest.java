@@ -1,6 +1,7 @@
 package fitbit;
 
 import akka.actor.ActorSystem;
+import fitbit.model.*;
 import jnr.constants.platform.Local;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -49,116 +50,128 @@ public class FitbitClientTest {
     public void testGetHeartRateData() throws ExecutionException, InterruptedException, TimeoutException {
         // Get heart rate data for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
-        CompletionStage<String> heartRateFuture = fitbitClient.getHeartRateByDate(testDate);
+        CompletionStage<HeartRateData> heartRateFuture = fitbitClient.getHeartRateByDate(testDate);
 
         // Wait for the result with a timeout
-        String heartRateData = heartRateFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
+        HeartRateData heartRateData = heartRateFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
 
         // Log the response for debugging
         System.out.println("[DEBUG_LOG] Heart Rate Data Response: " + heartRateData);
 
-        // Verify that we got a non-null, non-empty response
+        // Verify that we got a non-null response
         Assertions.assertNotNull(heartRateData, "Heart rate data should not be null");
-        Assertions.assertFalse(heartRateData.isEmpty(), "Heart rate data should not be empty");
 
-        // Verify that the response contains expected JSON structure elements
-        Assertions.assertTrue(heartRateData.contains("activities-heart"),
-                "Response should contain 'activities-heart' field");
+        // Verify that the activities heart list is not null or empty
+        Assertions.assertNotNull(heartRateData.activitiesHeart(), "Activities heart should not be null");
+        Assertions.assertFalse(heartRateData.activitiesHeart().isEmpty(), "Activities heart should not be empty");
 
-        // Verify that the restingHeartRate is 60
-        Assertions.assertTrue(heartRateData.contains("""
-                        "restingHeartRate": 60
-                        """),
-                "'restingHeartRate' should be 60");
+        // Verify that the first activities heart entry has the expected date
+        Assertions.assertEquals(testDate, heartRateData.activitiesHeart().get(0).dateTime(), 
+                "Date should match the requested date");
+
+        // Verify that the resting heart rate is 60
+        Assertions.assertEquals(60, heartRateData.activitiesHeart().get(0).value().restingHeartRate(),
+                "Resting heart rate should be 60");
     }
 
     @Test
     public void testGetActiveZoneMinutesByDate() throws ExecutionException, InterruptedException, TimeoutException {
         // Get Active Zone Minutes data for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
-        CompletionStage<String> azmFuture = fitbitClient.getActiveZoneMinutesByDate(testDate);
+        CompletionStage<ActiveZoneMinutesData> azmFuture = fitbitClient.getActiveZoneMinutesByDate(testDate);
 
         // Wait for the result with a timeout
-        String azmData = azmFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
+        ActiveZoneMinutesData azmData = azmFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
 
         // Log the response for debugging
         System.out.println("[DEBUG_LOG] Active Zone Minutes Data Response: " + azmData);
 
-        // Verify that we got a non-null, non-empty response
+        // Verify that we got a non-null response
         Assertions.assertNotNull(azmData, "Active Zone Minutes data should not be null");
-        Assertions.assertFalse(azmData.isEmpty(), "Active Zone Minutes data should not be empty");
 
-        // Verify that the response contains expected JSON structure elements
-        Assertions.assertTrue(azmData.contains("activities-active-zone-minutes"),
-                "Response should contain 'activities-active-zone-minutes' field");
+        // Verify that the activities active zone minutes list is not null or empty
+        Assertions.assertNotNull(azmData.activitiesActiveZoneMinutes(), "Activities active zone minutes should not be null");
+        Assertions.assertFalse(azmData.activitiesActiveZoneMinutes().isEmpty(), "Activities active zone minutes should not be empty");
 
+        // Verify that the first activities active zone minutes entry has the expected date
+        Assertions.assertEquals(testDate, azmData.activitiesActiveZoneMinutes().get(0).dateTime(), 
+                "Date should match the requested date");
     }
 
     @Test
     public void testGetSleepLogByDate() throws ExecutionException, InterruptedException, TimeoutException {
         // Get sleep log data for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
-        CompletionStage<String> sleepFuture = fitbitClient.getSleepLogByDate(testDate);
+        CompletionStage<SleepLogData> sleepFuture = fitbitClient.getSleepLogByDate(testDate);
 
         // Wait for the result with a timeout
-        String sleepData = sleepFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
+        SleepLogData sleepData = sleepFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
 
         // Log the response for debugging
         System.out.println("[DEBUG_LOG] Sleep Log Data Response: " + sleepData);
 
-        // Verify that we got a non-null, non-empty response
+        // Verify that we got a non-null response
         Assertions.assertNotNull(sleepData, "Sleep log data should not be null");
-        Assertions.assertFalse(sleepData.isEmpty(), "Sleep log data should not be empty");
 
-        // Verify that the response contains expected JSON structure elements
-        Assertions.assertTrue(sleepData.contains("sleep"),
-                "Response should contain 'sleep' field");
+        // Verify that the sleep list is not null or empty
+        Assertions.assertNotNull(sleepData.sleep(), "Sleep list should not be null");
+        Assertions.assertFalse(sleepData.sleep().isEmpty(), "Sleep list should not be empty");
 
+        // Verify that the first sleep entry has the expected date
+        Assertions.assertEquals(testDate, sleepData.sleep().get(0).dateOfSleep(), 
+                "Date should match the requested date");
     }
 
     @Test
     public void testGetWeightLogByDate() throws ExecutionException, InterruptedException, TimeoutException {
         // Get weight log data for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
-        CompletionStage<String> weightFuture = fitbitClient.getWeightLogByDate(testDate);
+        CompletionStage<WeightLogData> weightFuture = fitbitClient.getWeightLogByDate(testDate);
 
         // Wait for the result with a timeout
-        String weightData = weightFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
+        WeightLogData weightData = weightFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
 
         // Log the response for debugging
         System.out.println("[DEBUG_LOG] Weight Log Data Response: " + weightData);
 
-        // Verify that we got a non-null, non-empty response
+        // Verify that we got a non-null response
         Assertions.assertNotNull(weightData, "Weight log data should not be null");
-        Assertions.assertFalse(weightData.isEmpty(), "Weight log data should not be empty");
 
-        // Verify that the response contains expected JSON structure elements
-        Assertions.assertTrue(weightData.contains("weight"),
-                "Response should contain 'weight' field");
+        // Verify that the weight list is not null
+        Assertions.assertNotNull(weightData.weight(), "Weight list should not be null");
 
+        // Note: The weight list might be empty if there are no weight entries for the specified date
+        // If the weight list is not empty, verify that the first weight entry has the expected date
+        if (!weightData.weight().isEmpty()) {
+            Assertions.assertEquals(testDate, weightData.weight().get(0).date(), 
+                    "Date should match the requested date");
+        } else {
+            System.out.println("[DEBUG_LOG] No weight entries found for date: " + testDate);
+        }
     }
 
     @Test
     public void testGetDailyActivitySummary() throws ExecutionException, InterruptedException, TimeoutException {
         // Get daily activity summary for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
-        CompletionStage<String> activityFuture = fitbitClient.getDailyActivitySummary(testDate);
+        CompletionStage<DailyActivitySummary> activityFuture = fitbitClient.getDailyActivitySummary(testDate);
 
         // Wait for the result with a timeout
-        String activityData = activityFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
+        DailyActivitySummary activityData = activityFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
 
         // Log the response for debugging
         System.out.println("[DEBUG_LOG] Daily Activity Summary Response: " + activityData);
 
-        // Verify that we got a non-null, non-empty response
+        // Verify that we got a non-null response
         Assertions.assertNotNull(activityData, "Daily activity summary should not be null");
-        Assertions.assertFalse(activityData.isEmpty(), "Daily activity summary should not be empty");
 
-        // Verify that the response contains expected JSON structure elements
-        Assertions.assertTrue(activityData.contains("activities"),
-                "Response should contain 'activities' field");
-        Assertions.assertTrue(activityData.contains("summary"),
-                "Response should contain 'summary' field");
+        // Verify that the summary is not null
+        Assertions.assertNotNull(activityData.summary(), "Summary should not be null");
 
+        // Verify that the goals are not null
+        Assertions.assertNotNull(activityData.goals(), "Goals should not be null");
+
+        // Verify that the activities list is not null
+        Assertions.assertNotNull(activityData.activities(), "Activities should not be null");
     }
 }

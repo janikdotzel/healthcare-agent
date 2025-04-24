@@ -1,6 +1,7 @@
 package fitbit;
 
 import akka.actor.ActorSystem;
+import fitbit.model.HeartRateData;
 import java.time.LocalDate;
 import java.util.Scanner;
 import java.util.concurrent.CompletionStage;
@@ -41,11 +42,22 @@ public class Main {
 
             // Step 3: Get heart rate data for today
             LocalDate today = LocalDate.now();
-            CompletionStage<String> heartRateFuture = fitbitClient.getHeartRateByDate(today);
-            String heartRateData = heartRateFuture.toCompletableFuture().get();
+            CompletionStage<HeartRateData> heartRateFuture = fitbitClient.getHeartRateByDate(today);
+            HeartRateData heartRateData = heartRateFuture.toCompletableFuture().get();
 
             System.out.println("\nHeart Rate Data for " + today + ":");
-            System.out.println(heartRateData);
+            System.out.println("Activities Heart: " + heartRateData.activitiesHeart());
+
+            if (!heartRateData.activitiesHeart().isEmpty() && 
+                heartRateData.activitiesHeart().get(0).value() != null && 
+                heartRateData.activitiesHeart().get(0).value().restingHeartRate() != null) {
+                System.out.println("Resting Heart Rate: " + heartRateData.activitiesHeart().get(0).value().restingHeartRate());
+            }
+
+            if (heartRateData.activitiesHeartIntraday() != null && 
+                heartRateData.activitiesHeartIntraday().dataset() != null) {
+                System.out.println("Intraday Data Points: " + heartRateData.activitiesHeartIntraday().dataset().size());
+            }
 
         } catch (InterruptedException | ExecutionException e) {
             System.err.println("Error: " + e.getMessage());
