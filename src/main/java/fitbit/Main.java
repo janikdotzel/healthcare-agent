@@ -1,7 +1,7 @@
 package fitbit;
 
 import akka.actor.ActorSystem;
-import fitbit.model.HeartRateData;
+
 import java.time.LocalDate;
 import java.util.Scanner;
 import java.util.concurrent.CompletionStage;
@@ -40,24 +40,40 @@ public class Main {
             System.out.println("Refresh Token: " + tokenResponse.getRefreshToken());
             System.out.println("Expires In: " + tokenResponse.getExpiresIn() + " seconds");
 
-            // Step 3: Get heart rate data for today
-            LocalDate today = LocalDate.now();
-            CompletionStage<HeartRateData> heartRateFuture = fitbitClient.getHeartRateByDate(today);
-            HeartRateData heartRateData = heartRateFuture.toCompletableFuture().get();
+            // ----------------------------------------------------------------------------------------
 
-            System.out.println("\nHeart Rate Data for " + today + ":");
-            System.out.println("Activities Heart: " + heartRateData.activitiesHeart());
+            FitbitHealthChecker checker = new FitbitHealthChecker(fitbitClient);
 
-            if (!heartRateData.activitiesHeart().isEmpty() && 
-                heartRateData.activitiesHeart().get(0).value() != null && 
-                heartRateData.activitiesHeart().get(0).value().restingHeartRate() != null) {
-                System.out.println("Resting Heart Rate: " + heartRateData.activitiesHeart().get(0).value().restingHeartRate());
+            // Check when was the last time the resting heart rate was above 65
+            System.out.println("\nChecking when was the last time the resting heart rate was above 65...");
+
+            LocalDate currentDate = LocalDate.now();
+            LocalDate foundDate = null;
+            boolean dateFound = false;
+
+            // Check the last 30 days
+            for (int i = 0; i < 30 && !dateFound; i++) {
+                LocalDate dateToCheck = currentDate.minusDays(i);
+
+                try {
+                    // Check if resting heart rate was 65 or higher on this date
+                    Integer heartRate = checker.restingHeartRate(dateToCheck).toCompletableFuture().get();
+                    System.out.println("Checking date: " + dateToCheck + " - Resting heart rate was " + heartRate);
+                    if (heartRate >= 65) {
+                        foundDate = dateToCheck;
+                        dateFound = true;
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error checking heart rate for date " + dateToCheck + ": " + e.getMessage());
+                }
             }
 
-            if (heartRateData.activitiesHeartIntraday() != null && 
-                heartRateData.activitiesHeartIntraday().dataset() != null) {
-                System.out.println("Intraday Data Points: " + heartRateData.activitiesHeartIntraday().dataset().size());
+            if (dateFound) {
+                System.out.println("The last time the resting heart rate was above 65 was on: " + foundDate);
+            } else {
+                System.out.println("No days found with resting heart rate above 65 in the last 30 days.");
             }
+
 
         } catch (InterruptedException | ExecutionException e) {
             System.err.println("Error: " + e.getMessage());

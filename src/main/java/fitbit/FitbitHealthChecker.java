@@ -30,24 +30,17 @@ public class FitbitHealthChecker {
      * Gets the resting heart rate if it is above the threshold.
      *
      * @param date The date to check
-     * @param threshold The threshold in bpm (default is 65)
      * @return CompletionStage with Optional containing the resting heart rate if above threshold, empty otherwise
      */
-    public CompletionStage<Optional<Integer>> isRestingHeartRateAboveThreshold(LocalDate date, int threshold) {
+    public CompletionStage<Integer> restingHeartRate(LocalDate date) {
         return fitbitClient.getHeartRateByDate(date)
                 .thenApply(heartRateData -> {
-                    if (heartRateData.activitiesHeart().isEmpty()) {
-                        return Optional.empty();
+                    if (heartRateData.activitiesHeart().isEmpty() || heartRateData.activitiesHeart().getFirst().value() == null) {
+                        return -1;
                     }
 
-                    HeartRateData.HeartRateValue value = heartRateData.activitiesHeart().get(0).value();
-                    Integer restingHeartRate = value.restingHeartRate();
-
-                    if (restingHeartRate != null && restingHeartRate > threshold) {
-                        return Optional.of(restingHeartRate);
-                    } else {
-                        return Optional.empty();
-                    }
+                    HeartRateData.HeartRateValue value = heartRateData.activitiesHeart().getFirst().value();
+                    return value.restingHeartRate();
                 });
     }
 

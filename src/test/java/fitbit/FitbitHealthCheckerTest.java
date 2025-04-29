@@ -49,7 +49,7 @@ public class FitbitHealthCheckerTest {
     }
 
     @Test
-    public void testIsRestingHeartRateAboveThreshold_True() throws ExecutionException, InterruptedException, TimeoutException {
+    public void testRestingHeartRate_True() throws ExecutionException, InterruptedException, TimeoutException {
         // Setup test data
         LocalDate testDate = LocalDate.of(2025, 4, 24);
 
@@ -57,16 +57,15 @@ public class FitbitHealthCheckerTest {
         mockFitbitClient.setHeartRateData(testDate, 70); // Resting heart rate above threshold (65)
 
         // Call the method under test
-        CompletionStage<Optional<Integer>> result = healthChecker.isRestingHeartRateAboveThreshold(testDate, 65);
+        CompletionStage<Integer> result = healthChecker.restingHeartRate(testDate);
 
         // Verify the result
-        Optional<Integer> heartRate = result.toCompletableFuture().get(5, TimeUnit.SECONDS);
-        Assertions.assertTrue(heartRate.isPresent(), "Heart rate should be present");
-        Assertions.assertEquals(70, heartRate.get(), "Heart rate should be 70");
+        Integer heartRate = result.toCompletableFuture().get(5, TimeUnit.SECONDS);
+        Assertions.assertEquals(70, heartRate, "Heart rate should be 70");
     }
 
     @Test
-    public void testIsRestingHeartRateAboveThreshold_False() throws ExecutionException, InterruptedException, TimeoutException {
+    public void testRestingHeartRate_False() throws ExecutionException, InterruptedException, TimeoutException {
         // Setup test data
         LocalDate testDate = LocalDate.of(2025, 4, 24);
 
@@ -74,11 +73,11 @@ public class FitbitHealthCheckerTest {
         mockFitbitClient.setHeartRateData(testDate, 60); // Resting heart rate below threshold (65)
 
         // Call the method under test
-        CompletionStage<Optional<Integer>> result = healthChecker.isRestingHeartRateAboveThreshold(testDate, 65);
+        CompletionStage<Integer> result = healthChecker.restingHeartRate(testDate);
 
         // Verify the result
-        Optional<Integer> heartRate = result.toCompletableFuture().get(5, TimeUnit.SECONDS);
-        Assertions.assertFalse(heartRate.isPresent(), "Heart rate should not be present");
+        Integer heartRate = result.toCompletableFuture().get(5, TimeUnit.SECONDS);
+        Assertions.assertEquals(60, heartRate, "Heart rate should be 60");
     }
 
     @Test
