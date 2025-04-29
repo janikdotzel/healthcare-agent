@@ -47,7 +47,9 @@ public class Main {
             // Check when was the last time the resting heart rate was above 65
             System.out.println("\nChecking when was the last time the resting heart rate was above 65...");
 
-            LocalDate currentDate = LocalDate.now();
+            // Get the date for 10th april 2025
+            LocalDate currentDate = LocalDate.of(2025, 4, 6);
+//            LocalDate currentDate = LocalDate.now();
             LocalDate foundDate = null;
             boolean dateFound = false;
 

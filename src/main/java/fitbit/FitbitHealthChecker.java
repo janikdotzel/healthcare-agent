@@ -35,7 +35,7 @@ public class FitbitHealthChecker {
     public CompletionStage<Integer> restingHeartRate(LocalDate date) {
         return fitbitClient.getHeartRateByDate(date)
                 .thenApply(heartRateData -> {
-                    if (heartRateData.activitiesHeart().isEmpty() || heartRateData.activitiesHeart().getFirst().value() == null) {
+                    if (heartRateData.activitiesHeart().isEmpty() || heartRateData.activitiesHeart().getFirst().value().restingHeartRate() == null) {
                         return -1;
                     }
 
