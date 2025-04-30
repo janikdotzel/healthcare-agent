@@ -1,6 +1,7 @@
 package fitbit;
 
 import akka.actor.ActorSystem;
+import io.akka.health.agent.application.FitbitTool;
 
 import java.time.LocalDate;
 import java.util.Scanner;
@@ -42,7 +43,7 @@ public class Main {
 
             // ----------------------------------------------------------------------------------------
 
-            FitbitHealthChecker checker = new FitbitHealthChecker(fitbitClient);
+            FitbitTool checker = new FitbitTool(fitbitClient);
 
             // Check when was the last time the resting heart rate was above 65
             System.out.println("\nChecking when was the last time the resting heart rate was above 65...");

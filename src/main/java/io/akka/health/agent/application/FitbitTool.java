@@ -1,5 +1,7 @@
-package fitbit;
+package io.akka.health.agent.application;
 
+import dev.langchain4j.agent.tool.Tool;
+import fitbit.FitbitClient;
 import fitbit.model.*;
 
 import java.time.LocalDate;
@@ -10,28 +12,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
-/**
- * Class that provides health check methods based on Fitbit data.
- * Uses FitbitClient to retrieve data and performs specific health checks.
- */
-public class FitbitHealthChecker {
+public class FitbitTool {
+
     private final FitbitClient fitbitClient;
 
-    /**
-     * Constructor for FitbitHealthChecker.
-     *
-     * @param fitbitClient The FitbitClient to use for retrieving data
-     */
-    public FitbitHealthChecker(FitbitClient fitbitClient) {
+    public FitbitTool(FitbitClient fitbitClient) {
         this.fitbitClient = fitbitClient;
     }
 
-    /**
-     * Gets the resting heart rate if it is above the threshold.
-     *
-     * @param date The date to check
-     * @return CompletionStage with Optional containing the resting heart rate if above threshold, empty otherwise
-     */
+    @Tool("Get resting heart rate for a specific date")
     public CompletionStage<Integer> restingHeartRate(LocalDate date) {
         return fitbitClient.getHeartRateByDate(date)
                 .thenApply(heartRateData -> {
@@ -44,14 +33,7 @@ public class FitbitHealthChecker {
                 });
     }
 
-    /**
-     * Gets the heart rate value that exceeded the safe range the most.
-     *
-     * @param date The date to check
-     * @param minThreshold The minimum safe threshold in bpm (default is 40)
-     * @param maxThreshold The maximum safe threshold in bpm (default is 170)
-     * @return CompletionStage with Optional containing the heart rate value that exceeded the safe range the most, empty if all values are within range
-     */
+    @Tool("Check if heart rate (in bpm) exceeded the range for a specific date. If exceeded, it returns the value that exceeded the range the most.")
     public CompletionStage<Optional<Integer>> isHeartRateOutsideSafeRange(LocalDate date, int minThreshold, int maxThreshold) {
         return fitbitClient.getHeartRateByDate(date)
                 .thenApply(heartRateData -> {
@@ -86,14 +68,7 @@ public class FitbitHealthChecker {
                 });
     }
 
-
-    /**
-     * Gets the total active minutes for the user in a week.
-     *
-     * @param startDate The start date of the week
-     * @param endDate The end date of the week
-     * @return CompletionStage with integer representing total active minutes in the week
-     */
+    @Tool("Get total active minutes fora specific date range (usually one week).")
     public CompletionStage<Integer> getActiveMinutesInWeek(LocalDate startDate, LocalDate endDate) {
         List<CompletionStage<ActiveZoneMinutesData>> futures = new ArrayList<>();
 
@@ -123,12 +98,7 @@ public class FitbitHealthChecker {
                 });
     }
 
-    /**
-     * Gets the number of hours the user slept on a particular day.
-     *
-     * @param date The date to check
-     * @return CompletionStage with double representing hours slept on that day
-     */
+    @Tool("Get amount of sleep hours for a specific date.")
     public CompletionStage<Double> getSleepHoursForDay(LocalDate date) {
         return fitbitClient.getSleepLogByDate(date)
                 .thenApply(sleepLogData -> {
@@ -140,12 +110,7 @@ public class FitbitHealthChecker {
                 });
     }
 
-    /**
-     * Gets the amount of REM sleep in minutes for a specific date.
-     *
-     * @param date The date to check
-     * @return CompletionStage with integer representing minutes of REM sleep
-     */
+    @Tool("Get amount of REM sleep in minutes for a specific date.")
     public CompletionStage<Integer> getRemSleepMinutes(LocalDate date) {
         return fitbitClient.getSleepLogByDate(date)
                 .thenApply(sleepLogData -> {
@@ -166,13 +131,7 @@ public class FitbitHealthChecker {
                 });
     }
 
-    /**
-     * Gets all sport activities (sport, gym, aerobic) for the specified week.
-     *
-     * @param startDate The start date of the week
-     * @param endDate The end date of the week
-     * @return CompletionStage with list of sport activities
-     */
+    @Tool("Get all sport activities (sport, gym, aerobic) for a specific date range (usually one week).")
     public CompletionStage<List<DailyActivitySummary.Activity>> getSportActivitiesInWeek(LocalDate startDate, LocalDate endDate) {
         List<CompletionStage<DailyActivitySummary>> futures = new ArrayList<>();
 
@@ -209,12 +168,7 @@ public class FitbitHealthChecker {
                 });
     }
 
-    /**
-     * Gets the number of steps walked on a specific day.
-     *
-     * @param date The date to check
-     * @return CompletionStage with integer representing steps walked on that day
-     */
+    @Tool("Get number of steps walked for a specific date.")
     public CompletionStage<Integer> getStepsForDay(LocalDate date) {
         return fitbitClient.getDailyActivitySummary(date)
                 .thenApply(data -> {

@@ -14,7 +14,7 @@ import java.util.concurrent.CompletionStage;
 
 /**
  * Test implementation of FitbitClient that returns predefined test data.
- * Used for testing FitbitHealthChecker without making actual API calls.
+ * Used for testing FitbitTool without making actual API calls.
  */
 public class MockFitbitClient extends FitbitClient {
     

@@ -10,7 +10,7 @@ import akka.javasdk.http.HttpResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Acl(allow = @Acl.Matcher(principal = Acl.Principal.INTERNET))
+@Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 @HttpEndpoint("/agent")
 public class AgentEndpoint {
 
@@ -24,9 +24,6 @@ public class AgentEndpoint {
     this.agent = agent;
   }
 
-  /**
-   * This method runs the search and streams the response to the UI.
-   */
   @Post("/ask")
   public HttpResponse ask(AskRequest request) {
     log.info("Received request: {}", request);

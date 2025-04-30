@@ -1,6 +1,6 @@
 package io.akka.health.common;
 
-import io.akka.Bootstrap;
+import io.akka.health.Bootstrap;
 
 import java.io.IOException;
 import java.io.InputStream;

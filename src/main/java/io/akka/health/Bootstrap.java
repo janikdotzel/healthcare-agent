@@ -1,4 +1,4 @@
-package io.akka;
+package io.akka.health;
 
 import io.akka.health.agent.application.HealthAgent;
 import io.akka.health.common.KeyUtils;
@@ -6,7 +6,6 @@ import akka.javasdk.DependencyProvider;
 import akka.javasdk.ServiceSetup;
 import akka.javasdk.annotations.Setup;
 import akka.javasdk.client.ComponentClient;
-import akka.stream.Materializer;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import org.slf4j.Logger;

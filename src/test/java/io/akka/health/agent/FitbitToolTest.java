@@ -1,7 +1,9 @@
-package fitbit;
+package io.akka.health.agent;
 
 import akka.actor.ActorSystem;
+import fitbit.MockFitbitClient;
 import fitbit.model.*;
+import io.akka.health.agent.application.FitbitTool;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,13 +19,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Test class for FitbitHealthChecker.
+ * Test class for FitbitTool.
  */
-public class FitbitHealthCheckerTest {
+public class FitbitToolTest {
 
     private static ActorSystem system;
     private MockFitbitClient mockFitbitClient;
-    private FitbitHealthChecker healthChecker;
+    private FitbitTool healthChecker;
 
     @BeforeAll
     public static void setupClass() {
@@ -44,8 +46,8 @@ public class FitbitHealthCheckerTest {
         // Create a test FitbitClient
         mockFitbitClient = new MockFitbitClient(system);
 
-        // Create the FitbitHealthChecker with the test client
-        healthChecker = new FitbitHealthChecker(mockFitbitClient);
+        // Create the FitbitTool with the test client
+        healthChecker = new FitbitTool(mockFitbitClient);
     }
 
     @Test
