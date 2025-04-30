@@ -61,16 +61,6 @@ public class IntegrationTest extends TestKitSupport {
                 });
     }
 
-    @Test
-    public void testThatHealthAgentUsesToolCalling() {
-        // TODO Assert that the AI queries sensor data via a tool call
-    }
-
-    @Test
-    public void testAgentEndpoint() {
-        // TODO
-    }
-
     private SessionEntity.Messages getSession(ComponentClient componentClient, String sessionId) {
         var session = await(componentClient
                 .forEventSourcedEntity(sessionId)

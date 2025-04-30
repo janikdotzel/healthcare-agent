@@ -3,6 +3,8 @@ package io.akka.health.agent.application;
 import dev.langchain4j.agent.tool.Tool;
 import fitbit.FitbitClient;
 import fitbit.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -15,6 +17,7 @@ import java.util.stream.Collectors;
 public class FitbitTool {
 
     private final FitbitClient fitbitClient;
+    private final static Logger logger = LoggerFactory.getLogger(FitbitTool.class);
 
     public FitbitTool(FitbitClient fitbitClient) {
         this.fitbitClient = fitbitClient;
@@ -22,6 +25,7 @@ public class FitbitTool {
 
     @Tool("Get resting heart rate for a specific date")
     public CompletionStage<Integer> restingHeartRate(LocalDate date) {
+        logger.info("Getting resting heart rate for date {}", date);
         return fitbitClient.getHeartRateByDate(date)
                 .thenApply(heartRateData -> {
                     if (heartRateData.activitiesHeart().isEmpty() || heartRateData.activitiesHeart().getFirst().value().restingHeartRate() == null) {
@@ -35,6 +39,7 @@ public class FitbitTool {
 
     @Tool("Check if heart rate (in bpm) exceeded the range for a specific date. If exceeded, it returns the value that exceeded the range the most.")
     public CompletionStage<Optional<Integer>> isHeartRateOutsideSafeRange(LocalDate date, int minThreshold, int maxThreshold) {
+        logger.info("Checking heart rate for date {} with thresholds {} - {}", date, minThreshold, maxThreshold);
         return fitbitClient.getHeartRateByDate(date)
                 .thenApply(heartRateData -> {
                     if (heartRateData.activitiesHeartIntraday() == null || 
@@ -70,6 +75,7 @@ public class FitbitTool {
 
     @Tool("Get total active minutes fora specific date range (usually one week).")
     public CompletionStage<Integer> getActiveMinutesInWeek(LocalDate startDate, LocalDate endDate) {
+        logger.info("Getting active minutes from {} to {}", startDate, endDate);
         List<CompletionStage<ActiveZoneMinutesData>> futures = new ArrayList<>();
 
         LocalDate currentDate = startDate;
@@ -100,6 +106,7 @@ public class FitbitTool {
 
     @Tool("Get amount of sleep hours for a specific date.")
     public CompletionStage<Double> getSleepHoursForDay(LocalDate date) {
+        logger.info("Getting sleep hours for date {}", date);
         return fitbitClient.getSleepLogByDate(date)
                 .thenApply(sleepLogData -> {
                     if (sleepLogData.summary() != null && sleepLogData.summary().totalMinutesAsleep() != null) {
@@ -112,6 +119,7 @@ public class FitbitTool {
 
     @Tool("Get amount of REM sleep in minutes for a specific date.")
     public CompletionStage<Integer> getRemSleepMinutes(LocalDate date) {
+        logger.info("Getting REM sleep minutes for date {}", date);
         return fitbitClient.getSleepLogByDate(date)
                 .thenApply(sleepLogData -> {
                     if (sleepLogData.sleep() == null || sleepLogData.sleep().isEmpty()) {
@@ -133,6 +141,7 @@ public class FitbitTool {
 
     @Tool("Get all sport activities (sport, gym, aerobic) for a specific date range (usually one week).")
     public CompletionStage<List<DailyActivitySummary.Activity>> getSportActivitiesInWeek(LocalDate startDate, LocalDate endDate) {
+        logger.info("Getting sport activities from {} to {}", startDate, endDate);
         List<CompletionStage<DailyActivitySummary>> futures = new ArrayList<>();
 
         LocalDate currentDate = startDate;
@@ -170,6 +179,7 @@ public class FitbitTool {
 
     @Tool("Get number of steps walked for a specific date.")
     public CompletionStage<Integer> getStepsForDay(LocalDate date) {
+        logger.info("Getting steps for date {}", date);
         return fitbitClient.getDailyActivitySummary(date)
                 .thenApply(data -> {
                     if (data.summary() != null && data.summary().steps() != null) {

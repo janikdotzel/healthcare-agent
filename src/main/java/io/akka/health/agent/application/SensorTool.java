@@ -22,6 +22,8 @@ public class SensorTool {
                 .method(SensorView::getSensorDataByByUser)
                 .invokeAsync(userId)
                 .toCompletableFuture()
+                //TODO remove blocking call
+
                 // We don't want blocking calls, but langchain4j doesn't support an async tool call...
                 .join();
     }

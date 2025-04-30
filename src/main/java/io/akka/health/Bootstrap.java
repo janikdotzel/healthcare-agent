@@ -1,5 +1,6 @@
 package io.akka.health;
 
+import fitbit.FitbitClient;
 import io.akka.health.agent.application.HealthAgent;
 import io.akka.health.common.KeyUtils;
 import akka.javasdk.DependencyProvider;
@@ -17,6 +18,7 @@ public class Bootstrap implements ServiceSetup {
   private final Logger logger = LoggerFactory.getLogger(getClass());
   private final MongoClient mongoClient;
   private final ComponentClient componentClient;
+  private final FitbitClient fitbitClient = new FitbitClient();
 
   public Bootstrap(ComponentClient componentClient) {
 
@@ -37,7 +39,7 @@ public class Bootstrap implements ServiceSetup {
       @Override
       public <T> T getDependency(Class<T> cls) {
         if (cls.equals(HealthAgent.class)) {
-          return (T) new HealthAgent(componentClient, mongoClient);
+          return (T) new HealthAgent(componentClient, mongoClient, fitbitClient);
         }
 
         if (cls.equals(MongoClient.class)) {
