@@ -10,9 +10,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
 
 public class FitbitTool {
 
@@ -24,169 +21,154 @@ public class FitbitTool {
     }
 
     @Tool("Get resting heart rate for a specific date")
-    public CompletionStage<Integer> restingHeartRate(LocalDate date) {
+    public Integer restingHeartRate(LocalDate date) {
         logger.info("Getting resting heart rate for date {}", date);
-        return fitbitClient.getHeartRateByDate(date)
-                .thenApply(heartRateData -> {
-                    if (heartRateData.activitiesHeart().isEmpty() || heartRateData.activitiesHeart().getFirst().value().restingHeartRate() == null) {
-                        return -1;
-                    }
 
-                    HeartRateData.HeartRateValue value = heartRateData.activitiesHeart().getFirst().value();
-                    return value.restingHeartRate();
-                });
+        var data = fitbitClient.getHeartRateByDate(date);
+
+        if (data.activitiesHeart().isEmpty() || data.activitiesHeart().getFirst().value().restingHeartRate() == null) {
+            return -1;
+        }
+
+        HeartRateData.HeartRateValue value = data.activitiesHeart().getFirst().value();
+        return value.restingHeartRate();
     }
 
     @Tool("Check if heart rate (in bpm) exceeded the range for a specific date. If exceeded, it returns the value that exceeded the range the most.")
-    public CompletionStage<Optional<Integer>> isHeartRateOutsideSafeRange(LocalDate date, int minThreshold, int maxThreshold) {
+    public Optional<Integer> isHeartRateOutsideSafeRange(LocalDate date, int minThreshold, int maxThreshold) {
         logger.info("Checking heart rate for date {} with thresholds {} - {}", date, minThreshold, maxThreshold);
-        return fitbitClient.getHeartRateByDate(date)
-                .thenApply(heartRateData -> {
-                    if (heartRateData.activitiesHeartIntraday() == null || 
-                        heartRateData.activitiesHeartIntraday().dataset() == null || 
-                        heartRateData.activitiesHeartIntraday().dataset().isEmpty()) {
-                        return Optional.empty();
-                    }
 
-                    List<HeartRateData.HeartRateDataPoint> dataPoints = heartRateData.activitiesHeartIntraday().dataset();
+        var data = fitbitClient.getHeartRateByDate(date);
 
-                    Integer maxDeviation = null;
-                    Integer mostExtremeValue = null;
+        if (data.activitiesHeartIntraday() == null || data.activitiesHeartIntraday().dataset() == null || data.activitiesHeartIntraday().dataset().isEmpty()) {
+            return Optional.empty();
+        }
 
-                    for (HeartRateData.HeartRateDataPoint point : dataPoints) {
-                        int value = point.value();
-                        int deviation = 0;
+        List<HeartRateData.HeartRateDataPoint> dataPoints = data.activitiesHeartIntraday().dataset();
 
-                        if (value < minThreshold) {
-                            deviation = minThreshold - value;
-                        } else if (value > maxThreshold) {
-                            deviation = value - maxThreshold;
-                        }
+        Integer maxDeviation = null;
+        Integer mostExtremeValue = null;
 
-                        if (deviation > 0 && (maxDeviation == null || deviation > maxDeviation)) {
-                            maxDeviation = deviation;
-                            mostExtremeValue = value;
-                        }
-                    }
+        for (HeartRateData.HeartRateDataPoint point : dataPoints) {
+            int value = point.value();
+            int deviation = 0;
 
-                    return mostExtremeValue != null ? Optional.of(mostExtremeValue) : Optional.empty();
-                });
+            if (value < minThreshold) {
+                deviation = minThreshold - value;
+            } else if (value > maxThreshold) {
+                deviation = value - maxThreshold;
+            }
+
+            if (deviation > 0 && (maxDeviation == null || deviation > maxDeviation)) {
+                maxDeviation = deviation;
+                mostExtremeValue = value;
+            }
+        }
+
+        return mostExtremeValue != null ? Optional.of(mostExtremeValue) : Optional.empty();
     }
 
     @Tool("Get total active minutes fora specific date range (usually one week).")
-    public CompletionStage<Integer> getActiveMinutesInWeek(LocalDate startDate, LocalDate endDate) {
+    public Integer getActiveMinutesInWeek(LocalDate startDate, LocalDate endDate) {
         logger.info("Getting active minutes from {} to {}", startDate, endDate);
-        List<CompletionStage<ActiveZoneMinutesData>> futures = new ArrayList<>();
+        List<ActiveZoneMinutesData> list = new ArrayList<>();
 
         LocalDate currentDate = startDate;
         while (!currentDate.isAfter(endDate)) {
-            futures.add(fitbitClient.getActiveZoneMinutesByDate(currentDate));
+            list.add(fitbitClient.getActiveZoneMinutesByDate(currentDate));
             currentDate = currentDate.plusDays(1);
         }
 
-        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .thenApply(v -> {
-                    int totalActiveMinutes = 0;
+        int totalActiveMinutes = 0;
 
-                    for (CompletionStage<ActiveZoneMinutesData> future : futures) {
-                        ActiveZoneMinutesData data = ((CompletableFuture<ActiveZoneMinutesData>) future).join();
+        for (ActiveZoneMinutesData azm : list) {
+            if (azm.activitiesActiveZoneMinutes() != null && !azm.activitiesActiveZoneMinutes().isEmpty()) {
+                ActiveZoneMinutesData.ActiveZoneMinutesValue value = azm.activitiesActiveZoneMinutes().getFirst().value();
 
-                        if (data.activitiesActiveZoneMinutes() != null && !data.activitiesActiveZoneMinutes().isEmpty()) {
-                            ActiveZoneMinutesData.ActiveZoneMinutesValue value = data.activitiesActiveZoneMinutes().get(0).value();
+                if (value.activeZoneMinutes() != null) {
+                    totalActiveMinutes += value.activeZoneMinutes();
+                }
+            }
+        }
 
-                            if (value.activeZoneMinutes() != null) {
-                                totalActiveMinutes += value.activeZoneMinutes();
-                            }
-                        }
-                    }
-
-                    return totalActiveMinutes;
-                });
+        return totalActiveMinutes;
     }
 
     @Tool("Get amount of sleep hours for a specific date.")
-    public CompletionStage<Double> getSleepHoursForDay(LocalDate date) {
+    public Double getSleepHoursForDay(LocalDate date) {
         logger.info("Getting sleep hours for date {}", date);
-        return fitbitClient.getSleepLogByDate(date)
-                .thenApply(sleepLogData -> {
-                    if (sleepLogData.summary() != null && sleepLogData.summary().totalMinutesAsleep() != null) {
-                        return sleepLogData.summary().totalMinutesAsleep() / 60.0;
-                    } else {
-                        return 0.0;
-                    }
-                });
+
+        var data = fitbitClient.getSleepLogByDate(date);
+
+        if (data.summary() != null && data.summary().totalMinutesAsleep() != null) {
+            return data.summary().totalMinutesAsleep() / 60.0;
+        } else {
+            return 0.0;
+        }
     }
 
     @Tool("Get amount of REM sleep in minutes for a specific date.")
-    public CompletionStage<Integer> getRemSleepMinutes(LocalDate date) {
+    public Integer getRemSleepMinutes(LocalDate date) {
         logger.info("Getting REM sleep minutes for date {}", date);
-        return fitbitClient.getSleepLogByDate(date)
-                .thenApply(sleepLogData -> {
-                    if (sleepLogData.sleep() == null || sleepLogData.sleep().isEmpty()) {
-                        return 0;
-                    }
 
-                    int totalRemMinutes = 0;
+        var data = fitbitClient.getSleepLogByDate(date);
 
-                    for (SleepLogData.Sleep sleep : sleepLogData.sleep()) {
-                        if (sleep.levels() != null && sleep.levels().summary() != null && 
-                            sleep.levels().summary().rem() != null && sleep.levels().summary().rem().minutes() != null) {
-                            totalRemMinutes += sleep.levels().summary().rem().minutes();
-                        }
-                    }
+        if (data.sleep() == null || data.sleep().isEmpty())
+            return 0;
 
-                    return totalRemMinutes;
-                });
+        int totalRemMinutes = 0;
+
+        for (SleepLogData.Sleep sleep : data.sleep()) {
+            if (sleep.levels() != null && sleep.levels().summary() != null && sleep.levels().summary().rem() != null && sleep.levels().summary().rem().minutes() != null) {
+                totalRemMinutes += sleep.levels().summary().rem().minutes();
+            }
+        }
+
+        return totalRemMinutes;
     }
 
     @Tool("Get all sport activities (sport, gym, aerobic) for a specific date range (usually one week).")
-    public CompletionStage<List<DailyActivitySummary.Activity>> getSportActivitiesInWeek(LocalDate startDate, LocalDate endDate) {
+    public List<DailyActivitySummary.Activity> getSportActivitiesInWeek(LocalDate startDate, LocalDate endDate) {
         logger.info("Getting sport activities from {} to {}", startDate, endDate);
-        List<CompletionStage<DailyActivitySummary>> futures = new ArrayList<>();
+        List<DailyActivitySummary> list = new ArrayList<>();
 
         LocalDate currentDate = startDate;
         while (!currentDate.isAfter(endDate)) {
-            futures.add(fitbitClient.getDailyActivitySummary(currentDate));
+            list.add(fitbitClient.getDailyActivitySummary(currentDate));
             currentDate = currentDate.plusDays(1);
         }
 
-        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .thenApply(v -> {
-                    List<DailyActivitySummary.Activity> sportActivities = new ArrayList<>();
+        List<DailyActivitySummary.Activity> sportActivities = new ArrayList<>();
 
-                    for (CompletionStage<DailyActivitySummary> future : futures) {
-                        DailyActivitySummary data = ((CompletableFuture<DailyActivitySummary>) future).join();
+        for (DailyActivitySummary summary : list) {
+            if (summary.activities() != null) {
+                // Collect activities that are sports or intensive (like gym or aerobic)
+                List<DailyActivitySummary.Activity> intensiveActivities = summary.activities().stream()
+                        .filter(activity -> {
+                            String name = activity.name() != null ? activity.name().toLowerCase() : "";
+                            String parentName = activity.activityParentName() != null ? activity.activityParentName().toLowerCase() : "";
 
-                        if (data.activities() != null) {
-                            // Collect activities that are sports or intensive (like gym or aerobic)
-                            List<DailyActivitySummary.Activity> intensiveActivities = data.activities().stream()
-                                    .filter(activity -> {
-                                        String name = activity.name() != null ? activity.name().toLowerCase() : "";
-                                        String parentName = activity.activityParentName() != null ? activity.activityParentName().toLowerCase() : "";
+                            return name.contains("sport") || name.contains("gym") || name.contains("aerobic") ||
+                                    parentName.contains("sport") || parentName.contains("gym") || parentName.contains("aerobic");
+                        })
+                        .toList();
 
-                                        return name.contains("sport") || name.contains("gym") || name.contains("aerobic") ||
-                                               parentName.contains("sport") || parentName.contains("gym") || parentName.contains("aerobic");
-                                    })
-                                    .collect(Collectors.toList());
+                sportActivities.addAll(intensiveActivities);
+            }
+        }
 
-                            sportActivities.addAll(intensiveActivities);
-                        }
-                    }
-
-                    return sportActivities;
-                });
+        return sportActivities;
     }
 
     @Tool("Get number of steps walked for a specific date.")
-    public CompletionStage<Integer> getStepsForDay(LocalDate date) {
+    public Integer getStepsForDay(LocalDate date) {
         logger.info("Getting steps for date {}", date);
-        return fitbitClient.getDailyActivitySummary(date)
-                .thenApply(data -> {
-                    if (data.summary() != null && data.summary().steps() != null) {
-                        return data.summary().steps();
-                    } else {
-                        return 0;
-                    }
-                });
+
+        var data = fitbitClient.getDailyActivitySummary(date);
+
+        if (data.summary() != null && data.summary().steps() != null)
+            return data.summary().steps();
+        else
+            return 0;
     }
 }

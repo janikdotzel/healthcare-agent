@@ -57,7 +57,7 @@ public class Main {
 
             try {
                 // Check if resting heart rate was 65 or higher on this date
-                Integer heartRate = checker.restingHeartRate(dateToCheck).toCompletableFuture().get();
+                Integer heartRate = checker.restingHeartRate(dateToCheck);
                 System.out.println("Checking date: " + dateToCheck + " - Resting heart rate was " + heartRate);
                 if (heartRate >= 65) {
                     foundDate = dateToCheck;

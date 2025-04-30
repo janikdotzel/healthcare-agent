@@ -24,7 +24,7 @@ public class MockFitbitClient extends FitbitClient {
     private final Map<LocalDate, DailyActivitySummary> dailyActivitySummaryMap = new HashMap<>();
     
     public MockFitbitClient(ActorSystem system) {
-        super(system);
+        super(null);
     }
     
     /**
@@ -308,27 +308,23 @@ public class MockFitbitClient extends FitbitClient {
     }
     
     @Override
-    public CompletionStage<HeartRateData> getHeartRateByDate(LocalDate date) {
-        HeartRateData data = heartRateDataMap.getOrDefault(date, createDefaultHeartRateData(date));
-        return CompletableFuture.completedFuture(data);
+    public HeartRateData getHeartRateByDate(LocalDate date) {
+        return heartRateDataMap.getOrDefault(date, createDefaultHeartRateData(date));
     }
     
     @Override
-    public CompletionStage<ActiveZoneMinutesData> getActiveZoneMinutesByDate(LocalDate date) {
-        ActiveZoneMinutesData data = activeZoneMinutesDataMap.getOrDefault(date, createDefaultActiveZoneMinutesData(date));
-        return CompletableFuture.completedFuture(data);
+    public ActiveZoneMinutesData getActiveZoneMinutesByDate(LocalDate date) {
+        return activeZoneMinutesDataMap.getOrDefault(date, createDefaultActiveZoneMinutesData(date));
     }
     
     @Override
-    public CompletionStage<SleepLogData> getSleepLogByDate(LocalDate date) {
-        SleepLogData data = sleepLogDataMap.getOrDefault(date, createDefaultSleepLogData(date));
-        return CompletableFuture.completedFuture(data);
+    public SleepLogData getSleepLogByDate(LocalDate date) {
+        return sleepLogDataMap.getOrDefault(date, createDefaultSleepLogData(date));
     }
     
     @Override
-    public CompletionStage<DailyActivitySummary> getDailyActivitySummary(LocalDate date) {
-        DailyActivitySummary data = dailyActivitySummaryMap.getOrDefault(date, createDefaultDailyActivitySummary(date));
-        return CompletableFuture.completedFuture(data);
+    public DailyActivitySummary getDailyActivitySummary(LocalDate date) {
+        return dailyActivitySummaryMap.getOrDefault(date, createDefaultDailyActivitySummary(date));
     }
     
     // Helper methods to create default data

@@ -1,5 +1,6 @@
 package fitbit;
 
+import akka.http.javadsl.model.headers.HttpCredentials;
 import akka.javasdk.http.HttpClient;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,8 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+
 
 public class FitbitClient {
     private static final String AUTH_URL = "https://www.fitbit.com/oauth2/authorize";
@@ -120,219 +120,123 @@ public class FitbitClient {
         }
     }
 
-    public CompletionStage<HeartRateData> getHeartRateByDate(LocalDate date) {
-        return ensureValidToken().thenCompose(valid -> {
-            String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
-            String url = API_BASE_URL + "/1/user/-/activities/heart/date/" + dateStr + "/1d.json";
+    public HeartRateData getHeartRateByDate(LocalDate date) {
+        ensureValidToken();
 
-            // For now, we'll continue to use the java.net.http.HttpClient
-            // This is a temporary solution until we can figure out how to properly use the akka.javasdk.http.HttpClient
-            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+        String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String url = API_BASE_URL + "/1/user/-/activities/heart/date/" + dateStr + "/1d.json";
 
-            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                    .uri(java.net.URI.create(url))
-                    .header("Authorization", "Bearer " + accessToken)
-                    .GET()
-                    .build();
+        var response = httpClient
+                .GET(url)
+                .addCredentials(HttpCredentials.createOAuth2BearerToken(accessToken))
+                .invoke();
 
-            CompletableFuture<HeartRateData> future = new CompletableFuture<>();
-
-            client.sendAsync(request, java.net.http.HttpResponse.BodyHandlers.ofString())
-                    .thenAccept(response -> {
-                        if (response.statusCode() == 200) {
-                            try {
-                                HeartRateData data = parser.parseHeartRateData(response.body());
-                                future.complete(data);
-                            } catch (Exception e) {
-                                future.completeExceptionally(new RuntimeException("Failed to parse heart rate data", e));
-                            }
-                        } else {
-                            future.completeExceptionally(new RuntimeException(
-                                    "Failed to get heart rate data: " + response.statusCode() + " - " + response.body()));
-                        }
-                    })
-                    .exceptionally(ex -> {
-                        future.completeExceptionally(new RuntimeException("Failed to send request", ex));
-                        return null;
-                    });
-
-            return future;
-        });
-    }
-
-    public CompletionStage<ActiveZoneMinutesData> getActiveZoneMinutesByDate(LocalDate date) {
-        return ensureValidToken().thenCompose(valid -> {
-            String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
-            String url = API_BASE_URL + "/1/user/-/activities/active-zone-minutes/date/" + dateStr + "/1d.json";
-
-            // For now, we'll continue to use the java.net.http.HttpClient
-            // This is a temporary solution until we can figure out how to properly use the akka.javasdk.http.HttpClient
-            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
-
-            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                    .uri(java.net.URI.create(url))
-                    .header("Authorization", "Bearer " + accessToken)
-                    .GET()
-                    .build();
-
-            CompletableFuture<ActiveZoneMinutesData> future = new CompletableFuture<>();
-
-            client.sendAsync(request, java.net.http.HttpResponse.BodyHandlers.ofString())
-                    .thenAccept(response -> {
-                        if (response.statusCode() == 200) {
-                            try {
-                                ActiveZoneMinutesData data = parser.parseActiveZoneMinutesData(response.body());
-                                future.complete(data);
-                            } catch (Exception e) {
-                                future.completeExceptionally(new RuntimeException("Failed to parse Active Zone Minutes data", e));
-                            }
-                        } else {
-                            future.completeExceptionally(new RuntimeException(
-                                    "Failed to get Active Zone Minutes data: " + response.statusCode() + " - " + response.body()));
-                        }
-                    })
-                    .exceptionally(ex -> {
-                        future.completeExceptionally(new RuntimeException("Failed to send request", ex));
-                        return null;
-                    });
-
-            return future;
-        });
-    }
-
-    public CompletionStage<SleepLogData> getSleepLogByDate(LocalDate date) {
-        return ensureValidToken().thenCompose(valid -> {
-            String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
-            String url = API_BASE_URL + "/1.2/user/-/sleep/date/" + dateStr + ".json";
-
-            // For now, we'll continue to use the java.net.http.HttpClient
-            // This is a temporary solution until we can figure out how to properly use the akka.javasdk.http.HttpClient
-            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
-
-            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                    .uri(java.net.URI.create(url))
-                    .header("Authorization", "Bearer " + accessToken)
-                    .GET()
-                    .build();
-
-            CompletableFuture<SleepLogData> future = new CompletableFuture<>();
-
-            client.sendAsync(request, java.net.http.HttpResponse.BodyHandlers.ofString())
-                    .thenAccept(response -> {
-                        if (response.statusCode() == 200) {
-                            try {
-                                SleepLogData data = parser.parseSleepLogData(response.body());
-                                future.complete(data);
-                            } catch (Exception e) {
-                                future.completeExceptionally(new RuntimeException("Failed to parse sleep log data", e));
-                            }
-                        } else {
-                            future.completeExceptionally(new RuntimeException(
-                                    "Failed to get sleep log data: " + response.statusCode() + " - " + response.body()));
-                        }
-                    })
-                    .exceptionally(ex -> {
-                        future.completeExceptionally(new RuntimeException("Failed to send request", ex));
-                        return null;
-                    });
-
-            return future;
-        });
-    }
-
-    public CompletionStage<WeightLogData> getWeightLogByDate(LocalDate date) {
-        return ensureValidToken().thenCompose(valid -> {
-            String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
-            String url = API_BASE_URL + "/1/user/-/body/log/weight/date/" + dateStr + ".json";
-
-            // For now, we'll continue to use the java.net.http.HttpClient
-            // This is a temporary solution until we can figure out how to properly use the akka.javasdk.http.HttpClient
-            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
-
-            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                    .uri(java.net.URI.create(url))
-                    .header("Authorization", "Bearer " + accessToken)
-                    .GET()
-                    .build();
-
-            CompletableFuture<WeightLogData> future = new CompletableFuture<>();
-
-            client.sendAsync(request, java.net.http.HttpResponse.BodyHandlers.ofString())
-                    .thenAccept(response -> {
-                        if (response.statusCode() == 200) {
-                            try {
-                                WeightLogData data = parser.parseWeightLogData(response.body());
-                                future.complete(data);
-                            } catch (Exception e) {
-                                future.completeExceptionally(new RuntimeException("Failed to parse weight log data", e));
-                            }
-                        } else {
-                            future.completeExceptionally(new RuntimeException(
-                                    "Failed to get weight log data: " + response.statusCode() + " - " + response.body()));
-                        }
-                    })
-                    .exceptionally(ex -> {
-                        future.completeExceptionally(new RuntimeException("Failed to send request", ex));
-                        return null;
-                    });
-
-            return future;
-        });
-    }
-
-    public CompletionStage<DailyActivitySummary> getDailyActivitySummary(LocalDate date) {
-        return ensureValidToken().thenCompose(valid -> {
-            String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
-            String url = API_BASE_URL + "/1/user/-/activities/date/" + dateStr + ".json";
-
-            // For now, we'll continue to use the java.net.http.HttpClient
-            // This is a temporary solution until we can figure out how to properly use the akka.javasdk.http.HttpClient
-            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
-
-            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                    .uri(java.net.URI.create(url))
-                    .header("Authorization", "Bearer " + accessToken)
-                    .GET()
-                    .build();
-
-            CompletableFuture<DailyActivitySummary> future = new CompletableFuture<>();
-
-            client.sendAsync(request, java.net.http.HttpResponse.BodyHandlers.ofString())
-                    .thenAccept(response -> {
-                        if (response.statusCode() == 200) {
-                            try {
-                                DailyActivitySummary data = parser.parseDailyActivitySummary(response.body());
-                                future.complete(data);
-                            } catch (Exception e) {
-                                future.completeExceptionally(new RuntimeException("Failed to parse daily activity summary", e));
-                            }
-                        } else {
-                            future.completeExceptionally(new RuntimeException(
-                                    "Failed to get daily activity summary: " + response.statusCode() + " - " + response.body()));
-                        }
-                    })
-                    .exceptionally(ex -> {
-                        future.completeExceptionally(new RuntimeException("Failed to send request", ex));
-                        return null;
-                    });
-
-            return future;
-        });
-    }
-
-
-    private CompletionStage<Boolean> ensureValidToken() {
-        if (accessToken == null) {
-            CompletableFuture<Boolean> future = new CompletableFuture<>();
-            future.completeExceptionally(new IllegalStateException("No access token available"));
-            return future;
+        if (response.status().intValue() == 200) {
+            try {
+                return parser.parseHeartRateData(response.body().utf8String());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse heart rate data", e);
+            }
+        } else {
+            throw new RuntimeException("Failed to get heart rate data: " + response.status() + " - " + response.body().utf8String());
         }
+    }
 
-        if (System.currentTimeMillis() < expiresAt) {
-            return CompletableFuture.completedFuture(true);
+    public ActiveZoneMinutesData getActiveZoneMinutesByDate(LocalDate date) {
+        ensureValidToken();
+
+        String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String url = API_BASE_URL + "/1/user/-/activities/active-zone-minutes/date/" + dateStr + "/1d.json";
+
+        var response = httpClient
+                .GET(url)
+                .addCredentials(HttpCredentials.createOAuth2BearerToken(accessToken))
+                .invoke();
+
+        if (response.status().intValue() == 200) {
+            try {
+                return parser.parseActiveZoneMinutesData(response.body().utf8String());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse Active Zone Minutes data", e);
+            }
+        } else {
+            throw new RuntimeException("Failed to get Active Zone Minutes data: " + response.status() + " - " + response.body().utf8String());
         }
+    }
 
-        return refreshAccessToken().thenApply(response -> true);
+    public SleepLogData getSleepLogByDate(LocalDate date) {
+        ensureValidToken();
+
+        String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String url = API_BASE_URL + "/1.2/user/-/sleep/date/" + dateStr + ".json";
+
+        var response = httpClient
+                .GET(url)
+                .addCredentials(HttpCredentials.createOAuth2BearerToken(accessToken))
+                .invoke();
+
+        if (response.status().intValue() == 200) {
+            try {
+                return parser.parseSleepLogData(response.body().utf8String());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse sleep log data", e);
+            }
+        } else {
+            throw new RuntimeException("Failed to get sleep log data: " + response.status() + " - " + response.body().utf8String());
+        }
+    }
+
+    public WeightLogData getWeightLogByDate(LocalDate date) {
+        ensureValidToken();
+
+        String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String url = API_BASE_URL + "/1/user/-/body/log/weight/date/" + dateStr + ".json";
+
+        var response = httpClient
+                .GET(url)
+                .addCredentials(HttpCredentials.createOAuth2BearerToken(accessToken))
+                .invoke();
+
+        if (response.status().intValue() == 200) {
+            try {
+                return parser.parseWeightLogData(response.body().utf8String());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse weight log data", e);
+            }
+        } else {
+            throw new RuntimeException("Failed to get weight log data: " + response.status() + " - " + response.body().utf8String());
+        }
+    }
+
+
+    public DailyActivitySummary getDailyActivitySummary(LocalDate date) {
+        ensureValidToken();
+
+        String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String url = API_BASE_URL + "/1/user/-/activities/date/" + dateStr + ".json";
+
+        var response = httpClient
+                .GET(url)
+                .addCredentials(HttpCredentials.createOAuth2BearerToken(accessToken))
+                .invoke();
+
+        if (response.status().intValue() == 200) {
+            try {
+                return parser.parseDailyActivitySummary(response.body().utf8String());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse daily activity summary", e);
+            }
+        } else {
+            throw new RuntimeException("Failed to get daily activity summary: " + response.status() + " - " + response.body().utf8String());
+        }
+    }
+
+    private void ensureValidToken() {
+        if (accessToken == null)
+            throw new IllegalStateException("No access token available");
+
+        if (System.currentTimeMillis() >= expiresAt)
+            refreshAccessToken();
     }
 
     private TokenResponse parseTokenResponse(String json) {

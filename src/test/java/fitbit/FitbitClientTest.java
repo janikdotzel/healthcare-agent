@@ -50,10 +50,7 @@ public class FitbitClientTest {
     public void testGetHeartRateData() throws ExecutionException, InterruptedException, TimeoutException {
         // Get heart rate data for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
-        CompletionStage<HeartRateData> heartRateFuture = fitbitClient.getHeartRateByDate(testDate);
-
-        // Wait for the result with a timeout
-        HeartRateData heartRateData = heartRateFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
+        HeartRateData heartRateData = fitbitClient.getHeartRateByDate(testDate);
 
         // Log the response for debugging
         System.out.println("[DEBUG_LOG] Heart Rate Data Response: " + heartRateData);
@@ -66,11 +63,11 @@ public class FitbitClientTest {
         Assertions.assertFalse(heartRateData.activitiesHeart().isEmpty(), "Activities heart should not be empty");
 
         // Verify that the first activities heart entry has the expected date
-        Assertions.assertEquals(testDate, heartRateData.activitiesHeart().get(0).dateTime(), 
+        Assertions.assertEquals(testDate, heartRateData.activitiesHeart().getFirst().dateTime(),
                 "Date should match the requested date");
 
         // Verify that the resting heart rate is 60
-        Assertions.assertEquals(60, heartRateData.activitiesHeart().get(0).value().restingHeartRate(),
+        Assertions.assertEquals(60, heartRateData.activitiesHeart().getFirst().value().restingHeartRate(),
                 "Resting heart rate should be 60");
     }
 
@@ -78,10 +75,7 @@ public class FitbitClientTest {
     public void testGetActiveZoneMinutesByDate() throws ExecutionException, InterruptedException, TimeoutException {
         // Get Active Zone Minutes data for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
-        CompletionStage<ActiveZoneMinutesData> azmFuture = fitbitClient.getActiveZoneMinutesByDate(testDate);
-
-        // Wait for the result with a timeout
-        ActiveZoneMinutesData azmData = azmFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
+        ActiveZoneMinutesData azmData = fitbitClient.getActiveZoneMinutesByDate(testDate);
 
         // Log the response for debugging
         System.out.println("[DEBUG_LOG] Active Zone Minutes Data Response: " + azmData);
@@ -94,7 +88,7 @@ public class FitbitClientTest {
         Assertions.assertFalse(azmData.activitiesActiveZoneMinutes().isEmpty(), "Activities active zone minutes should not be empty");
 
         // Verify that the first activities active zone minutes entry has the expected date
-        Assertions.assertEquals(testDate, azmData.activitiesActiveZoneMinutes().get(0).dateTime(), 
+        Assertions.assertEquals(testDate, azmData.activitiesActiveZoneMinutes().getFirst().dateTime(),
                 "Date should match the requested date");
     }
 
@@ -102,10 +96,7 @@ public class FitbitClientTest {
     public void testGetSleepLogByDate() throws ExecutionException, InterruptedException, TimeoutException {
         // Get sleep log data for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
-        CompletionStage<SleepLogData> sleepFuture = fitbitClient.getSleepLogByDate(testDate);
-
-        // Wait for the result with a timeout
-        SleepLogData sleepData = sleepFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
+        SleepLogData sleepData = fitbitClient.getSleepLogByDate(testDate);
 
         // Log the response for debugging
         System.out.println("[DEBUG_LOG] Sleep Log Data Response: " + sleepData);
@@ -126,10 +117,7 @@ public class FitbitClientTest {
     public void testGetWeightLogByDate() throws ExecutionException, InterruptedException, TimeoutException {
         // Get weight log data for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
-        CompletionStage<WeightLogData> weightFuture = fitbitClient.getWeightLogByDate(testDate);
-
-        // Wait for the result with a timeout
-        WeightLogData weightData = weightFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
+        WeightLogData weightData = fitbitClient.getWeightLogByDate(testDate);
 
         // Log the response for debugging
         System.out.println("[DEBUG_LOG] Weight Log Data Response: " + weightData);
@@ -154,10 +142,7 @@ public class FitbitClientTest {
     public void testGetDailyActivitySummary() throws ExecutionException, InterruptedException, TimeoutException {
         // Get daily activity summary for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
-        CompletionStage<DailyActivitySummary> activityFuture = fitbitClient.getDailyActivitySummary(testDate);
-
-        // Wait for the result with a timeout
-        DailyActivitySummary activityData = activityFuture.toCompletableFuture().get(30, TimeUnit.SECONDS);
+        DailyActivitySummary activityData = fitbitClient.getDailyActivitySummary(testDate);
 
         // Log the response for debugging
         System.out.println("[DEBUG_LOG] Daily Activity Summary Response: " + activityData);

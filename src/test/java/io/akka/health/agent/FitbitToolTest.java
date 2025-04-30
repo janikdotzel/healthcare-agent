@@ -59,10 +59,9 @@ public class FitbitToolTest {
         mockFitbitClient.setHeartRateData(testDate, 70); // Resting heart rate above threshold (65)
 
         // Call the method under test
-        CompletionStage<Integer> result = healthChecker.restingHeartRate(testDate);
+        Integer heartRate = healthChecker.restingHeartRate(testDate);
 
         // Verify the result
-        Integer heartRate = result.toCompletableFuture().get(5, TimeUnit.SECONDS);
         Assertions.assertEquals(70, heartRate, "Heart rate should be 70");
     }
 
@@ -75,10 +74,9 @@ public class FitbitToolTest {
         mockFitbitClient.setHeartRateData(testDate, 60); // Resting heart rate below threshold (65)
 
         // Call the method under test
-        CompletionStage<Integer> result = healthChecker.restingHeartRate(testDate);
+        Integer heartRate = healthChecker.restingHeartRate(testDate);
 
         // Verify the result
-        Integer heartRate = result.toCompletableFuture().get(5, TimeUnit.SECONDS);
         Assertions.assertEquals(60, heartRate, "Heart rate should be 60");
     }
 
@@ -91,10 +89,9 @@ public class FitbitToolTest {
         mockFitbitClient.setSleepLogData(testDate, 480); // 8 hours (480 minutes) of sleep
 
         // Call the method under test
-        CompletionStage<Double> result = healthChecker.getSleepHoursForDay(testDate);
+        Double hoursSlept = healthChecker.getSleepHoursForDay(testDate);
 
         // Verify the result
-        Double hoursSlept = result.toCompletableFuture().get(5, TimeUnit.SECONDS);
         Assertions.assertEquals(8.0, hoursSlept, 0.01, "Should have slept 8 hours");
     }
 
@@ -107,10 +104,9 @@ public class FitbitToolTest {
         mockFitbitClient.setDailyActivitySummaryWithSteps(testDate, 10500);
 
         // Call the method under test
-        CompletionStage<Integer> result = healthChecker.getStepsForDay(testDate);
+        Integer steps = healthChecker.getStepsForDay(testDate);
 
         // Verify the result
-        Integer steps = result.toCompletableFuture().get(5, TimeUnit.SECONDS);
         Assertions.assertEquals(10500, steps, "Should have 10500 steps");
     }
 
@@ -123,10 +119,9 @@ public class FitbitToolTest {
         mockFitbitClient.setHeartRateDataWithIntraday(testDate, List.of(60, 75, 180)); // One value above max threshold (170)
 
         // Call the method under test
-        CompletionStage<Optional<Integer>> result = healthChecker.isHeartRateOutsideSafeRange(testDate, 40, 170);
+        Optional<Integer> heartRate = healthChecker.isHeartRateOutsideSafeRange(testDate, 40, 170);
 
         // Verify the result
-        Optional<Integer> heartRate = result.toCompletableFuture().get(5, TimeUnit.SECONDS);
         Assertions.assertTrue(heartRate.isPresent(), "Heart rate should be present");
         Assertions.assertEquals(180, heartRate.get(), "Heart rate should be 180");
     }
@@ -140,10 +135,9 @@ public class FitbitToolTest {
         mockFitbitClient.setHeartRateDataWithIntraday(testDate, List.of(60, 35, 75)); // One value below min threshold (40)
 
         // Call the method under test
-        CompletionStage<Optional<Integer>> result = healthChecker.isHeartRateOutsideSafeRange(testDate, 40, 170);
+        Optional<Integer> heartRate = healthChecker.isHeartRateOutsideSafeRange(testDate, 40, 170);
 
         // Verify the result
-        Optional<Integer> heartRate = result.toCompletableFuture().get(5, TimeUnit.SECONDS);
         Assertions.assertTrue(heartRate.isPresent(), "Heart rate should be present");
         Assertions.assertEquals(35, heartRate.get(), "Heart rate should be 35");
     }
@@ -163,10 +157,9 @@ public class FitbitToolTest {
         }
 
         // Call the method under test
-        CompletionStage<Integer> result = healthChecker.getActiveMinutesInWeek(startDate, endDate);
+        Integer activeMinutes = healthChecker.getActiveMinutesInWeek(startDate, endDate);
 
         // Verify the result
-        Integer activeMinutes = result.toCompletableFuture().get(5, TimeUnit.SECONDS);
         Assertions.assertEquals(140, activeMinutes, "Should have 140 active minutes in the week");
     }
 
@@ -179,10 +172,9 @@ public class FitbitToolTest {
         mockFitbitClient.setSleepLogDataWithRem(testDate, 60); // 1 hour (60 minutes) of REM sleep
 
         // Call the method under test
-        CompletionStage<Integer> result = healthChecker.getRemSleepMinutes(testDate);
+        Integer remMinutes = healthChecker.getRemSleepMinutes(testDate);
 
         // Verify the result
-        Integer remMinutes = result.toCompletableFuture().get(5, TimeUnit.SECONDS);
         Assertions.assertEquals(60, remMinutes, "Should have 60 minutes of REM sleep");
     }
 
@@ -201,10 +193,9 @@ public class FitbitToolTest {
         }
 
         // Call the method under test
-        CompletionStage<List<DailyActivitySummary.Activity>> result = healthChecker.getSportActivitiesInWeek(startDate, endDate);
+        List<DailyActivitySummary.Activity> sportActivities = healthChecker.getSportActivitiesInWeek(startDate, endDate);
 
         // Verify the result
-        List<DailyActivitySummary.Activity> sportActivities = result.toCompletableFuture().get(5, TimeUnit.SECONDS);
         Assertions.assertEquals(2, sportActivities.size(), "Should have 2 sport activities");
     }
 }
