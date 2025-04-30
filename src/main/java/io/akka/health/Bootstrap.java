@@ -1,5 +1,6 @@
 package io.akka.health;
 
+import akka.javasdk.http.HttpClient;
 import fitbit.FitbitClient;
 import io.akka.health.agent.application.HealthAgent;
 import io.akka.health.common.KeyUtils;
@@ -18,9 +19,10 @@ public class Bootstrap implements ServiceSetup {
   private final Logger logger = LoggerFactory.getLogger(getClass());
   private final MongoClient mongoClient;
   private final ComponentClient componentClient;
-  private final FitbitClient fitbitClient = new FitbitClient();
+  private final HttpClient httpClient;
+  private final FitbitClient fitbitClient;
 
-  public Bootstrap(ComponentClient componentClient) {
+  public Bootstrap(ComponentClient componentClient, HttpClient httpClient) {
 
     if (!KeyUtils.hasValidKeys()) {
       throw new IllegalStateException(
@@ -31,6 +33,8 @@ public class Bootstrap implements ServiceSetup {
 
     this.componentClient = componentClient;
     this.mongoClient = MongoClients.create(KeyUtils.readMongoDbUri());
+    this.httpClient = httpClient;
+    this.fitbitClient = new FitbitClient(httpClient);
   }
 
   @Override
@@ -44,6 +48,10 @@ public class Bootstrap implements ServiceSetup {
 
         if (cls.equals(MongoClient.class)) {
           return (T) mongoClient;
+        }
+
+        if (cls.equals(FitbitClient.class)) {
+            return (T) new FitbitClient(httpClient);
         }
         return null;
       }

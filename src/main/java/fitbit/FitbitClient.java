@@ -1,9 +1,6 @@
 package fitbit;
 
-import akka.actor.ActorSystem;
-import akka.http.javadsl.Http;
-import akka.http.javadsl.model.*;
-import akka.http.javadsl.unmarshalling.Unmarshaller;
+import akka.javasdk.http.HttpClient;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fitbit.model.*;
@@ -20,9 +17,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-/**
- * Client for interacting with the Fitbit API using OAuth2 authentication.
- */
 public class FitbitClient {
     private static final String AUTH_URL = "https://www.fitbit.com/oauth2/authorize";
     private static final String TOKEN_URL = "https://api.fitbit.com/oauth2/token";
@@ -30,24 +24,22 @@ public class FitbitClient {
     private static final String REDIRECT_URI = "https://janikdotzel.com/";
     private static final String SCOPE = "heartrate activity sleep weight";
 
-    private final ActorSystem system;
-    private final Http http;
     private final ObjectMapper objectMapper;
     private final FitbitParser parser;
     private final String clientId;
     private final String clientSecret;
+    private final HttpClient httpClient;
 
     private String accessToken;
     private String refreshToken;
     private long expiresAt;
 
-    public FitbitClient(ActorSystem system) {
-        this.system = system;
-        this.http = Http.get(system);
+    public FitbitClient(HttpClient httpClient) {
         this.objectMapper = new ObjectMapper();
         this.parser = new FitbitParser();
         this.clientId = KeyUtils.readFitbitClientId();
         this.clientSecret = KeyUtils.readFitbitClientSecret();
+        this.httpClient = httpClient;
 
         if (!KeyUtils.hasFitbitKeys()) {
             throw new IllegalStateException(
@@ -55,11 +47,6 @@ public class FitbitClient {
         }
     }
 
-    /**
-     * Generates the authorization URL for the OAuth2 flow.
-     * 
-     * @return The authorization URL to redirect the user to.
-     */
     public String getAuthorizationUrl() {
         return AUTH_URL + "?" +
                 "response_type=code" +
@@ -69,15 +56,8 @@ public class FitbitClient {
                 "&expires_in=604800"; // 7 days
     }
 
-    /**
-     * Exchanges an authorization code for an access token.
-     * 
-     * @param code The authorization code received from the redirect.
-     * @return A CompletionStage that completes when the token exchange is done.
-     */
-    public CompletionStage<TokenResponse> exchangeCodeForToken(String code) {
-        String authHeader = "Basic " + Base64.getEncoder().encodeToString(
-                (clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
+    public TokenResponse exchangeCodeForAccessToken(String code) {
+        String authHeader = "Basic " + Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
 
         Map<String, String> formData = new HashMap<>();
         formData.put("grant_type", "authorization_code");
@@ -89,43 +69,29 @@ public class FitbitClient {
                 .reduce((a, b) -> a + "&" + b)
                 .orElse("");
 
-        HttpRequest request = HttpRequest.POST(TOKEN_URL)
-                .withEntity(ContentTypes.APPLICATION_X_WWW_FORM_URLENCODED, formDataString)
-                .addHeader(HttpHeader.parse("Authorization", authHeader));
+        var response = httpClient
+                .POST(TOKEN_URL)
+                .addHeader("Content-Type", "application/x-www-form-urlencoded")
+                .addHeader("Authorization", authHeader)
+                .withRequestBody(formDataString)
+                .invoke();
 
-        return http.singleRequest(request)
-                .thenCompose(response -> {
-                    if (response.status().isSuccess()) {
-                        return response.entity().toStrict(10000, system)
-                                .thenApply(strict -> strict.getData().utf8String())
-                                .thenApply(this::parseTokenResponse);
-                    } else {
-                        return response.entity().toStrict(10000, system)
-                                .thenApply(strict -> strict.getData().utf8String())
-                                .thenCompose(body -> {
-                                    CompletableFuture<TokenResponse> future = new CompletableFuture<>();
-                                    future.completeExceptionally(new RuntimeException(
-                                            "Failed to exchange code for token: " + response.status() + " - " + body));
-                                    return future;
-                                });
-                    }
-                });
+        if (response.status().intValue() == 200) {
+            try {
+                return parseTokenResponse(response.body().utf8String());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse token response", e);
+            }
+        } else {
+            throw new RuntimeException("Failed to exchange code for token: " + response.status() + " - " + response.body().utf8String());
+        }
     }
 
-    /**
-     * Refreshes an expired access token using the refresh token.
-     * 
-     * @return A CompletionStage that completes when the token refresh is done.
-     */
-    public CompletionStage<TokenResponse> refreshAccessToken() {
-        if (refreshToken == null) {
-            CompletableFuture<TokenResponse> future = new CompletableFuture<>();
-            future.completeExceptionally(new IllegalStateException("No refresh token available"));
-            return future;
-        }
+    public TokenResponse refreshAccessToken() {
 
-        String authHeader = "Basic " + Base64.getEncoder().encodeToString(
-                (clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
+        if (refreshToken == null) throw new IllegalStateException("No refresh token available");
+
+        String authHeader = "Basic " + Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
 
         Map<String, String> formData = new HashMap<>();
         formData.put("grant_type", "refresh_token");
@@ -136,234 +102,225 @@ public class FitbitClient {
                 .reduce((a, b) -> a + "&" + b)
                 .orElse("");
 
-        HttpRequest request = HttpRequest.POST(TOKEN_URL)
-                .withEntity(ContentTypes.APPLICATION_X_WWW_FORM_URLENCODED, formDataString)
-                .addHeader(HttpHeader.parse("Authorization", authHeader));
+        var response = httpClient
+                .POST(TOKEN_URL)
+                .addHeader("Content-Type", "application/x-www-form-urlencoded")
+                .addHeader("Authorization", authHeader)
+                .withRequestBody(formDataString)
+                .invoke();
 
-        return http.singleRequest(request)
-                .thenCompose(response -> {
-                    if (response.status().isSuccess()) {
-                        return response.entity().toStrict(10000, system)
-                                .thenApply(strict -> strict.getData().utf8String())
-                                .thenApply(this::parseTokenResponse);
-                    } else {
-                        return response.entity().toStrict(10000, system)
-                                .thenApply(strict -> strict.getData().utf8String())
-                                .thenCompose(body -> {
-                                    CompletableFuture<TokenResponse> future = new CompletableFuture<>();
-                                    future.completeExceptionally(new RuntimeException(
-                                            "Failed to refresh token: " + response.status() + " - " + body));
-                                    return future;
-                                });
-                    }
-                });
+        if (response.status().intValue() == 200) {
+            try {
+                return parseTokenResponse(response.body().utf8String());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse token response", e);
+            }
+        } else {
+            throw new RuntimeException("Failed to refresh token: " + response.status() + " - " + response.body().utf8String());
+        }
     }
 
-    /**
-     * Gets heart rate data for a specific date.
-     * 
-     * @param date The date to get heart rate data for.
-     * @return A CompletionStage that completes with the heart rate data.
-     */
     public CompletionStage<HeartRateData> getHeartRateByDate(LocalDate date) {
         return ensureValidToken().thenCompose(valid -> {
             String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
             String url = API_BASE_URL + "/1/user/-/activities/heart/date/" + dateStr + "/1d.json";
 
-            HttpRequest request = HttpRequest.GET(url)
-                    .addHeader(HttpHeader.parse("Authorization", "Bearer " + accessToken));
+            // For now, we'll continue to use the java.net.http.HttpClient
+            // This is a temporary solution until we can figure out how to properly use the akka.javasdk.http.HttpClient
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
 
-            return http.singleRequest(request)
-                    .thenCompose(response -> {
-                        if (response.status().isSuccess()) {
-                            return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String())
-                                    .thenApply(json -> {
-                                        try {
-                                            return parser.parseHeartRateData(json);
-                                        } catch (Exception e) {
-                                            throw new RuntimeException("Failed to parse heart rate data", e);
-                                        }
-                                    });
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(url))
+                    .header("Authorization", "Bearer " + accessToken)
+                    .GET()
+                    .build();
+
+            CompletableFuture<HeartRateData> future = new CompletableFuture<>();
+
+            client.sendAsync(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+                    .thenAccept(response -> {
+                        if (response.statusCode() == 200) {
+                            try {
+                                HeartRateData data = parser.parseHeartRateData(response.body());
+                                future.complete(data);
+                            } catch (Exception e) {
+                                future.completeExceptionally(new RuntimeException("Failed to parse heart rate data", e));
+                            }
                         } else {
-                            return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String())
-                                    .thenCompose(body -> {
-                                        CompletableFuture<HeartRateData> future = new CompletableFuture<>();
-                                        future.completeExceptionally(new RuntimeException(
-                                                "Failed to get heart rate data: " + response.status() + " - " + body));
-                                        return future;
-                                    });
+                            future.completeExceptionally(new RuntimeException(
+                                    "Failed to get heart rate data: " + response.statusCode() + " - " + response.body()));
                         }
+                    })
+                    .exceptionally(ex -> {
+                        future.completeExceptionally(new RuntimeException("Failed to send request", ex));
+                        return null;
                     });
+
+            return future;
         });
     }
 
-    /**
-     * Gets Active Zone Minutes time series data for a specific date.
-     * 
-     * @param date The date to get Active Zone Minutes data for.
-     * @return A CompletionStage that completes with the Active Zone Minutes data.
-     */
     public CompletionStage<ActiveZoneMinutesData> getActiveZoneMinutesByDate(LocalDate date) {
         return ensureValidToken().thenCompose(valid -> {
             String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
             String url = API_BASE_URL + "/1/user/-/activities/active-zone-minutes/date/" + dateStr + "/1d.json";
 
-            HttpRequest request = HttpRequest.GET(url)
-                    .addHeader(HttpHeader.parse("Authorization", "Bearer " + accessToken));
+            // For now, we'll continue to use the java.net.http.HttpClient
+            // This is a temporary solution until we can figure out how to properly use the akka.javasdk.http.HttpClient
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
 
-            return http.singleRequest(request)
-                    .thenCompose(response -> {
-                        if (response.status().isSuccess()) {
-                            return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String())
-                                    .thenApply(json -> {
-                                        try {
-                                            return parser.parseActiveZoneMinutesData(json);
-                                        } catch (Exception e) {
-                                            throw new RuntimeException("Failed to parse Active Zone Minutes data", e);
-                                        }
-                                    });
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(url))
+                    .header("Authorization", "Bearer " + accessToken)
+                    .GET()
+                    .build();
+
+            CompletableFuture<ActiveZoneMinutesData> future = new CompletableFuture<>();
+
+            client.sendAsync(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+                    .thenAccept(response -> {
+                        if (response.statusCode() == 200) {
+                            try {
+                                ActiveZoneMinutesData data = parser.parseActiveZoneMinutesData(response.body());
+                                future.complete(data);
+                            } catch (Exception e) {
+                                future.completeExceptionally(new RuntimeException("Failed to parse Active Zone Minutes data", e));
+                            }
                         } else {
-                            return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String())
-                                    .thenCompose(body -> {
-                                        CompletableFuture<ActiveZoneMinutesData> future = new CompletableFuture<>();
-                                        future.completeExceptionally(new RuntimeException(
-                                                "Failed to get Active Zone Minutes data: " + response.status() + " - " + body));
-                                        return future;
-                                    });
+                            future.completeExceptionally(new RuntimeException(
+                                    "Failed to get Active Zone Minutes data: " + response.statusCode() + " - " + response.body()));
                         }
+                    })
+                    .exceptionally(ex -> {
+                        future.completeExceptionally(new RuntimeException("Failed to send request", ex));
+                        return null;
                     });
+
+            return future;
         });
     }
 
-    /**
-     * Gets sleep log data for a specific date.
-     * 
-     * @param date The date to get sleep log data for.
-     * @return A CompletionStage that completes with the sleep log data.
-     */
     public CompletionStage<SleepLogData> getSleepLogByDate(LocalDate date) {
         return ensureValidToken().thenCompose(valid -> {
             String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
             String url = API_BASE_URL + "/1.2/user/-/sleep/date/" + dateStr + ".json";
 
-            HttpRequest request = HttpRequest.GET(url)
-                    .addHeader(HttpHeader.parse("Authorization", "Bearer " + accessToken));
+            // For now, we'll continue to use the java.net.http.HttpClient
+            // This is a temporary solution until we can figure out how to properly use the akka.javasdk.http.HttpClient
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
 
-            return http.singleRequest(request)
-                    .thenCompose(response -> {
-                        if (response.status().isSuccess()) {
-                            return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String())
-                                    .thenApply(json -> {
-                                        try {
-                                            return parser.parseSleepLogData(json);
-                                        } catch (Exception e) {
-                                            throw new RuntimeException("Failed to parse sleep log data", e);
-                                        }
-                                    });
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(url))
+                    .header("Authorization", "Bearer " + accessToken)
+                    .GET()
+                    .build();
+
+            CompletableFuture<SleepLogData> future = new CompletableFuture<>();
+
+            client.sendAsync(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+                    .thenAccept(response -> {
+                        if (response.statusCode() == 200) {
+                            try {
+                                SleepLogData data = parser.parseSleepLogData(response.body());
+                                future.complete(data);
+                            } catch (Exception e) {
+                                future.completeExceptionally(new RuntimeException("Failed to parse sleep log data", e));
+                            }
                         } else {
-                            return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String())
-                                    .thenCompose(body -> {
-                                        CompletableFuture<SleepLogData> future = new CompletableFuture<>();
-                                        future.completeExceptionally(new RuntimeException(
-                                                "Failed to get sleep log data: " + response.status() + " - " + body));
-                                        return future;
-                                    });
+                            future.completeExceptionally(new RuntimeException(
+                                    "Failed to get sleep log data: " + response.statusCode() + " - " + response.body()));
                         }
+                    })
+                    .exceptionally(ex -> {
+                        future.completeExceptionally(new RuntimeException("Failed to send request", ex));
+                        return null;
                     });
+
+            return future;
         });
     }
 
-    /**
-     * Gets weight log data for a specific date.
-     * 
-     * @param date The date to get weight log data for.
-     * @return A CompletionStage that completes with the weight log data.
-     */
     public CompletionStage<WeightLogData> getWeightLogByDate(LocalDate date) {
         return ensureValidToken().thenCompose(valid -> {
             String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
             String url = API_BASE_URL + "/1/user/-/body/log/weight/date/" + dateStr + ".json";
 
-            HttpRequest request = HttpRequest.GET(url)
-                    .addHeader(HttpHeader.parse("Authorization", "Bearer " + accessToken));
+            // For now, we'll continue to use the java.net.http.HttpClient
+            // This is a temporary solution until we can figure out how to properly use the akka.javasdk.http.HttpClient
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
 
-            return http.singleRequest(request)
-                    .thenCompose(response -> {
-                        if (response.status().isSuccess()) {
-                            return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String())
-                                    .thenApply(json -> {
-                                        try {
-                                            return parser.parseWeightLogData(json);
-                                        } catch (Exception e) {
-                                            throw new RuntimeException("Failed to parse weight log data", e);
-                                        }
-                                    });
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(url))
+                    .header("Authorization", "Bearer " + accessToken)
+                    .GET()
+                    .build();
+
+            CompletableFuture<WeightLogData> future = new CompletableFuture<>();
+
+            client.sendAsync(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+                    .thenAccept(response -> {
+                        if (response.statusCode() == 200) {
+                            try {
+                                WeightLogData data = parser.parseWeightLogData(response.body());
+                                future.complete(data);
+                            } catch (Exception e) {
+                                future.completeExceptionally(new RuntimeException("Failed to parse weight log data", e));
+                            }
                         } else {
-                            return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String())
-                                    .thenCompose(body -> {
-                                        CompletableFuture<WeightLogData> future = new CompletableFuture<>();
-                                        future.completeExceptionally(new RuntimeException(
-                                                "Failed to get weight log data: " + response.status() + " - " + body));
-                                        return future;
-                                    });
+                            future.completeExceptionally(new RuntimeException(
+                                    "Failed to get weight log data: " + response.statusCode() + " - " + response.body()));
                         }
+                    })
+                    .exceptionally(ex -> {
+                        future.completeExceptionally(new RuntimeException("Failed to send request", ex));
+                        return null;
                     });
+
+            return future;
         });
     }
 
-    /**
-     * Gets daily activity summary for a specific date.
-     * 
-     * @param date The date to get activity summary for.
-     * @return A CompletionStage that completes with the activity summary data.
-     */
     public CompletionStage<DailyActivitySummary> getDailyActivitySummary(LocalDate date) {
         return ensureValidToken().thenCompose(valid -> {
             String dateStr = date.format(DateTimeFormatter.ISO_LOCAL_DATE);
             String url = API_BASE_URL + "/1/user/-/activities/date/" + dateStr + ".json";
 
-            HttpRequest request = HttpRequest.GET(url)
-                    .addHeader(HttpHeader.parse("Authorization", "Bearer " + accessToken));
+            // For now, we'll continue to use the java.net.http.HttpClient
+            // This is a temporary solution until we can figure out how to properly use the akka.javasdk.http.HttpClient
+            java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
 
-            return http.singleRequest(request)
-                    .thenCompose(response -> {
-                        if (response.status().isSuccess()) {
-                            return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String())
-                                    .thenApply(json -> {
-                                        try {
-                                            return parser.parseDailyActivitySummary(json);
-                                        } catch (Exception e) {
-                                            throw new RuntimeException("Failed to parse daily activity summary", e);
-                                        }
-                                    });
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(url))
+                    .header("Authorization", "Bearer " + accessToken)
+                    .GET()
+                    .build();
+
+            CompletableFuture<DailyActivitySummary> future = new CompletableFuture<>();
+
+            client.sendAsync(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+                    .thenAccept(response -> {
+                        if (response.statusCode() == 200) {
+                            try {
+                                DailyActivitySummary data = parser.parseDailyActivitySummary(response.body());
+                                future.complete(data);
+                            } catch (Exception e) {
+                                future.completeExceptionally(new RuntimeException("Failed to parse daily activity summary", e));
+                            }
                         } else {
-                            return response.entity().toStrict(10000, system)
-                                    .thenApply(strict -> strict.getData().utf8String())
-                                    .thenCompose(body -> {
-                                        CompletableFuture<DailyActivitySummary> future = new CompletableFuture<>();
-                                        future.completeExceptionally(new RuntimeException(
-                                                "Failed to get daily activity summary: " + response.status() + " - " + body));
-                                        return future;
-                                    });
+                            future.completeExceptionally(new RuntimeException(
+                                    "Failed to get daily activity summary: " + response.statusCode() + " - " + response.body()));
                         }
+                    })
+                    .exceptionally(ex -> {
+                        future.completeExceptionally(new RuntimeException("Failed to send request", ex));
+                        return null;
                     });
+
+            return future;
         });
     }
 
-    /**
-     * Ensures that the access token is valid, refreshing it if necessary.
-     * 
-     * @return A CompletionStage that completes with true if the token is valid.
-     */
+
     private CompletionStage<Boolean> ensureValidToken() {
         if (accessToken == null) {
             CompletableFuture<Boolean> future = new CompletableFuture<>();
@@ -378,12 +335,6 @@ public class FitbitClient {
         return refreshAccessToken().thenApply(response -> true);
     }
 
-    /**
-     * Parses the token response from the Fitbit API.
-     * 
-     * @param json The JSON response from the token endpoint.
-     * @return The parsed TokenResponse.
-     */
     private TokenResponse parseTokenResponse(String json) {
         try {
             TokenResponse response = objectMapper.readValue(json, TokenResponse.class);
@@ -396,22 +347,12 @@ public class FitbitClient {
         }
     }
 
-    /**
-     * Sets the tokens manually (useful for testing or when tokens are stored externally).
-     * 
-     * @param accessToken  The access token.
-     * @param refreshToken The refresh token.
-     * @param expiresIn    The number of seconds until the token expires.
-     */
     public void setTokens(String accessToken, String refreshToken, long expiresIn) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.expiresAt = System.currentTimeMillis() + (expiresIn * 1000);
     }
 
-    /**
-     * Response object for the token endpoint.
-     */
     public static class TokenResponse {
         @JsonProperty("access_token")
         private String accessToken;

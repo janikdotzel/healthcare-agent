@@ -31,7 +31,7 @@ public class FitbitClientTest {
         system = ActorSystem.create("fitbit-test");
 
         // Initialize the FitbitClient
-        fitbitClient = new FitbitClient(system);
+        fitbitClient = new FitbitClient(null);
 
         // Set the access token manually
         // Note: We're setting a null refresh token and a long expiry time since we only need the access token for this test
