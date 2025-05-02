@@ -1,6 +1,10 @@
 package io.akka.health.agent.api;
 
 import akka.http.javadsl.model.*;
+import akka.javasdk.annotations.http.Get;
+import akka.javasdk.http.HttpClient;
+import akka.javasdk.http.HttpClientProvider;
+import fitbit.FitbitClient;
 import io.akka.health.agent.application.HealthAgent;
 import io.akka.health.agent.domain.StreamedResponse;
 import akka.javasdk.annotations.Acl;
@@ -9,6 +13,7 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.http.HttpResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
 @HttpEndpoint("/agent")
@@ -19,9 +24,11 @@ public class AgentEndpoint {
   public record AskRequest(String userId, String sessionId, String question) {}
 
   private final HealthAgent agent;
+  private final HttpClient httpClient;
 
-  public AgentEndpoint(HealthAgent agent) {
+  public AgentEndpoint(HealthAgent agent, HttpClientProvider httpClientProvider) {
     this.agent = agent;
+    this.httpClient = httpClientProvider.httpClientFor("https://akka.io/");
   }
 
   @Post("/ask")
@@ -32,5 +39,15 @@ public class AgentEndpoint {
         .map(StreamedResponse::content);
 
     return HttpResponses.serverSentEvents(response);
+  }
+
+  @Get("/getAccessToken")
+  public HttpResponse getAccessToken() {
+    log.info("Received request: getAccessToken");
+
+    FitbitClient fitbitClient = new FitbitClient(httpClient);
+    fitbitClient.getAccessTokenWithClientCredentials();
+
+    return HttpResponses.ok();
   }
 }

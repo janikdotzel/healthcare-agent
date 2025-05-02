@@ -51,6 +51,57 @@ public class FitbitToolTest {
     }
 
     @Test
+    public void testInitializeClientCredentials() {
+        // This test verifies that the FitbitTool can successfully initialize the FitbitClient
+        // with client credentials. The initialization happens in the FitbitTool constructor,
+        // which calls initializeClientCredentials(), which in turn calls
+        // fitbitClient.getAccessTokenWithClientCredentials().
+
+        // Since we're using a MockFitbitClient that returns a valid token response,
+        // no exception should be thrown during initialization.
+
+        // Create a new FitbitTool instance to trigger the initialization process
+        FitbitTool newTool = new FitbitTool(mockFitbitClient);
+
+        // If we got here without an exception, the test passes
+        // We can also verify that the tool can retrieve data from the Fitbit API
+        LocalDate testDate = LocalDate.of(2025, 4, 24);
+        mockFitbitClient.setHeartRateData(testDate, 70);
+
+        Integer heartRate = newTool.restingHeartRate(testDate);
+        Assertions.assertEquals(70, heartRate, "Heart rate should be 70");
+    }
+
+    @Test
+    public void testGetAccessTokenWithClientCredentials() {
+        // This test directly verifies that the getAccessTokenWithClientCredentials method
+        // of the MockFitbitClient returns a valid token response with the expected values.
+
+        // Call the method under test
+        FitbitClient.TokenResponse tokenResponse = mockFitbitClient.getAccessTokenWithClientCredentials();
+
+        // Verify that we got a non-null response
+        Assertions.assertNotNull(tokenResponse, "Token response should not be null");
+
+        // Verify that the access token is not null and has the expected value
+        Assertions.assertNotNull(tokenResponse.getAccessToken(), "Access token should not be null");
+        Assertions.assertEquals("mock-access-token", tokenResponse.getAccessToken(), "Access token should match expected value");
+
+        // Verify that the refresh token is not null and has the expected value
+        Assertions.assertNotNull(tokenResponse.getRefreshToken(), "Refresh token should not be null");
+        Assertions.assertEquals("mock-refresh-token", tokenResponse.getRefreshToken(), "Refresh token should match expected value");
+
+        // Verify that the expires in is correct
+        Assertions.assertEquals(3600, tokenResponse.getExpiresIn(), "Expires in should be 3600 seconds (1 hour)");
+
+        // Verify that the token type is correct
+        Assertions.assertEquals("Bearer", tokenResponse.getTokenType(), "Token type should be Bearer");
+
+        // Verify that the scope is correct
+        Assertions.assertEquals("heartrate activity sleep weight", tokenResponse.getScope(), "Scope should match expected value");
+    }
+
+    @Test
     public void testRestingHeartRate_True() throws ExecutionException, InterruptedException, TimeoutException {
         // Setup test data
         LocalDate testDate = LocalDate.of(2025, 4, 24);
