@@ -12,6 +12,9 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
@@ -21,11 +24,11 @@ import java.util.Map;
 
 
 public class FitbitClient {
-//    private static final String AUTH_URL = "/oauth2/authorize"; // The base url is already passed into the FitbitClient in the Boostrap class
+    private static final String AUTH_URL = "/oauth2/authorize"; // The base url is already passed into the FitbitClient in the Boostrap class
     private static final String TOKEN_URL = "/oauth2/token"; // The base url is already passed into the FitbitClient in the Boostrap class
     private static final String API_BASE_URL = ""; // The base url is already passed into the FitbitClient in the Boostrap class
     private static final String REDIRECT_URI = "https://janikdotzel.com/";
-//    private static final String SCOPE = "heartrate activity sleep weight";
+    private static final String SCOPE = "heartrate activity sleep weight";
     private static final Logger logger = LoggerFactory.getLogger(FitbitClient.class);
 
     private final ObjectMapper objectMapper;
@@ -37,6 +40,7 @@ public class FitbitClient {
     private String accessToken;
     private String refreshToken;
     private long expiresAt;
+    private String codeVerifier;
 
     public FitbitClient(HttpClient httpClient) {
         this.objectMapper = new ObjectMapper();
@@ -51,105 +55,37 @@ public class FitbitClient {
         }
     }
 
-//    public String getAuthorizationUrl() {
-//        return AUTH_URL + "?" +
-//                "response_type=code" +
-//                "&client_id=" + clientId +
-//                "&redirect_uri=" + URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8) +
-//                "&scope=" + URLEncoder.encode(SCOPE, StandardCharsets.UTF_8) +
-//                "&expires_in=604800"; // 7 days
-//    }
-
-    public TokenResponse exchangeCodeForAccessToken(String code) {
-        String authHeader = "Basic " + Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
-
-        Map<String, String> formData = new HashMap<>();
-        formData.put("grant_type", "authorization_code");
-        formData.put("code", code);
-        formData.put("redirect_uri", REDIRECT_URI);
-
-        String formDataString = formData.entrySet().stream()
-                .map(e -> e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
-                .reduce((a, b) -> a + "&" + b)
-                .orElse("");
-
-        var response = httpClient
-                .POST(TOKEN_URL)
-                .addHeader("Content-Type", "application/x-www-form-urlencoded")
-                .addHeader("Authorization", authHeader)
-                .withRequestBody(formDataString)
-                .invoke();
-
-        if (response.status().intValue() == 200) {
-            try {
-                return parseTokenResponse(response.body().utf8String());
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to parse token response", e);
-            }
-        } else {
-            throw new RuntimeException("Failed to exchange code for token: " + response.status() + " - " + response.body().utf8String());
+    public String getAuthorizationUrl() {
+        if (this.codeVerifier == null) {
+            generateCodeVerifier();
         }
+
+        String codeChallenge = generateCodeChallenge(this.codeVerifier);
+
+        return AUTH_URL + "?" +
+                "client_id=" + clientId +
+                "&response_type=code" +
+                "&code_challenge=" + codeChallenge +
+                "&code_challenge_method=S256" +
+                "&redirect_uri=" + URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8) +
+                "&scope=" + URLEncoder.encode(SCOPE, StandardCharsets.UTF_8);
     }
 
-    public TokenResponse refreshAccessToken() {
-
-        if (refreshToken == null) throw new IllegalStateException("No refresh token available");
-
-        String authHeader = "Basic " + Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
-
-        Map<String, String> formData = new HashMap<>();
-        formData.put("grant_type", "refresh_token");
-        formData.put("refresh_token", refreshToken);
-
-        String formDataString = formData.entrySet().stream()
-                .map(e -> e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
-                .reduce((a, b) -> a + "&" + b)
-                .orElse("");
-
-        var response = httpClient
-                .POST(TOKEN_URL)
-                .addHeader("Content-Type", "application/x-www-form-urlencoded")
-                .addHeader("Authorization", authHeader)
-                .withRequestBody(formDataString)
-                .invoke();
-
-        if (response.status().intValue() == 200) {
-            try {
-                return parseTokenResponse(response.body().utf8String());
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to parse token response", e);
-            }
-        } else {
-            throw new RuntimeException("Failed to refresh token: " + response.status() + " - " + response.body().utf8String());
+    public TokenResponse exchangeCodeForAccessToken(String authCode) {
+        if (this.codeVerifier == null) {
+            throw new IllegalStateException("Code verifier not generated. Call getAuthorizationUrl() first.");
         }
-    }
 
-    /**
-     * Gets an access token using client credentials flow.
-     * This method is intended for server-to-server authentication without user interaction.
-     * The Fitbit application must be registered as an "OAuth 2.0 Server" type.
-     *
-     * @return TokenResponse containing the access token
-     * @throws RuntimeException if the token request fails
-     */
-    public TokenResponse getAccessTokenWithClientCredentials() {
         String authHeader = "Basic " + Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
         logger.info("Using client ID: {}", clientId);
         logger.debug("Authorization header: {}", authHeader);
 
-        Map<String, String> formData = new HashMap<>();
-        formData.put("grant_type", "client_credentials");
-
-        // For client credentials flow in Fitbit API, we need to use specific scopes
-        // According to Fitbit API documentation, scopes should be in the format "resource:action"
-        formData.put("scope", "heartrate:read activity:read sleep:read weight:read");
-
-        logger.info("Requesting scopes: {}", formData.get("scope"));
-
-        String formDataString = formData.entrySet().stream()
-                .map(e -> e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
-                .reduce((a, b) -> a + "&" + b)
-                .orElse("");
+        // Create form data string
+        String formDataString = "client_id=" + URLEncoder.encode(clientId, StandardCharsets.UTF_8) +
+                "&code=" + URLEncoder.encode(authCode, StandardCharsets.UTF_8) +
+                "&code_verifier=" + URLEncoder.encode(codeVerifier, StandardCharsets.UTF_8) +
+                "&grant_type=authorization_code" +
+                "&redirect_uri=" + URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8);
 
         logger.debug("Request body: {}", formDataString);
         logger.info("Sending request to Fitbit API token endpoint: {}", TOKEN_URL);
@@ -177,15 +113,15 @@ public class FitbitClient {
                 throw new RuntimeException("Failed to parse token response", e);
             }
         } else {
-            logger.error("Failed to get token with client credentials: {} - {}", statusCode, responseBody);
+            logger.error("Failed to get token with authorization code: {} - {}", statusCode, responseBody);
 
             // Check for specific error conditions
             if (statusCode == 403) {
                 logger.error("403 Forbidden error. This could be due to incorrect client ID/secret, " +
-                             "invalid scope, or the application not being registered as an OAuth 2.0 Server type.");
+                        "invalid scope, or the application not being registered as an OAuth 2.0 Server type.");
             }
 
-            throw new RuntimeException("Failed to get token with client credentials: " + statusCode + " - " + responseBody);
+            throw new RuntimeException("Failed to get token with authorization code: " + statusCode + " - " + responseBody);
         }
     }
 
@@ -314,7 +250,7 @@ public class FitbitClient {
     private TokenResponse parseTokenResponse(String json) {
         try {
             TokenResponse response = objectMapper.readValue(json, TokenResponse.class);
-            setTokens(response.accessToken, response.refreshToken, System.currentTimeMillis() + (response.expiresIn * 1000));
+            setTokens(response.accessToken, response.refreshToken, response.expiresIn);
             return response;
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse token response", e);
@@ -325,6 +261,58 @@ public class FitbitClient {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.expiresAt = System.currentTimeMillis() + (expiresIn * 1000);
+    }
+
+    private String generateCodeVerifier() {
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] codeVerifierBytes = new byte[64]; // 64 bytes will give us a 86-character code verifier
+        secureRandom.nextBytes(codeVerifierBytes);
+        this.codeVerifier = Base64.getUrlEncoder().withoutPadding().encodeToString(codeVerifierBytes);
+        return this.codeVerifier;
+    }
+
+    private String generateCodeChallenge(String codeVerifier) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(codeVerifier.getBytes(StandardCharsets.UTF_8));
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Failed to generate code challenge: SHA-256 algorithm not available", e);
+        }
+    }
+
+    private TokenResponse refreshAccessToken() {
+        if (refreshToken == null) {
+            throw new IllegalStateException("No refresh token available");
+        }
+
+        String authHeader = "Basic " + Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
+
+        Map<String, String> formData = new HashMap<>();
+        formData.put("grant_type", "refresh_token");
+        formData.put("refresh_token", refreshToken);
+
+        String formDataString = formData.entrySet().stream()
+                .map(e -> e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
+                .reduce((a, b) -> a + "&" + b)
+                .orElse("");
+
+        var response = httpClient
+                .POST(TOKEN_URL)
+                .addHeader("Content-Type", "application/x-www-form-urlencoded")
+                .addHeader("Authorization", authHeader)
+                .withRequestBody(formDataString)
+                .invoke();
+
+        if (response.status().intValue() == 200) {
+            try {
+                return parseTokenResponse(response.body().utf8String());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse token response", e);
+            }
+        } else {
+            throw new RuntimeException("Failed to refresh token: " + response.status() + " - " + response.body().utf8String());
+        }
     }
 
     public static class TokenResponse {

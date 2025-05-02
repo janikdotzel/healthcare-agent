@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
+import java.util.Scanner;
 
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
@@ -42,24 +43,5 @@ public class AgentEndpoint {
         .map(StreamedResponse::content);
 
     return HttpResponses.serverSentEvents(response);
-  }
-
-  @Get("/getAccessToken")
-  public HttpResponse getAccessToken() {
-    log.info("Received request: getAccessToken");
-
-    fitbitClient.getAccessTokenWithClientCredentials();
-//    fitbitClient.setTokens(
-//            "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyM1E5NVIiLCJzdWIiOiI3RlI3WDIiLCJpc3MiOiJGaXRiaXQiLCJ0eXAiOiJhY2Nlc3NfdG9rZW4iLCJzY29wZXMiOiJyc29jIHJlY2cgcnNldCByaXJuIHJveHkgcm51dCBycHJvIHJzbGUgcmNmIHJhY3QgcmxvYyBycmVzIHJ3ZWkgcmhyIHJ0ZW0iLCJleHAiOjE3NDYyMDkzOTEsImlhdCI6MTc0NjE4MDU5MX0.5eY9PKTApPqRS7RLZ9vpBYZEN5poSLCPfubn8X3bvnQ",
-//            "faa0dddb8891c4cf76a5806dde80ebb51e8f9d441c2a98bca900f43cd1223b5a",
-//            28800);
-
-    var tool = new FitbitTool(fitbitClient);
-    // today
-    var today = LocalDate.now();
-    var steps = tool.getStepsForDay(today);
-    log.info("Steps: {}", steps);
-
-    return HttpResponses.ok();
   }
 }

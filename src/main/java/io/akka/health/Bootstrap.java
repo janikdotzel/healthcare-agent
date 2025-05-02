@@ -33,6 +33,13 @@ public class Bootstrap implements ServiceSetup {
     this.componentClient = componentClient;
     this.mongoClient = MongoClients.create(KeyUtils.readMongoDbUri());
     this.fitbitClient = new FitbitClient(httpClientProvider.httpClientFor("https://api.fitbit.com"));
+
+    // Retrieve your Tokens manually via https://dev.fitbit.com/build/reference/web-api/troubleshooting-guide/oauth2-tutorial/?clientEncodedId=23Q95R&redirectUri=https://janikdotzel.com/&applicationType=SERVER
+    // FitBits API does not support client credentials flow, so you need to use the authorization code flow that requires user interaction.
+    fitbitClient.setTokens(
+            "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyM1E5NVIiLCJzdWIiOiI3RlI3WDIiLCJpc3MiOiJGaXRiaXQiLCJ0eXAiOiJhY2Nlc3NfdG9rZW4iLCJzY29wZXMiOiJyc29jIHJlY2cgcnNldCByaXJuIHJveHkgcm51dCBycHJvIHJzbGUgcmNmIHJhY3QgcmxvYyBycmVzIHJ3ZWkgcmhyIHJ0ZW0iLCJleHAiOjE3NDYyMDkzOTEsImlhdCI6MTc0NjE4MDU5MX0.5eY9PKTApPqRS7RLZ9vpBYZEN5poSLCPfubn8X3bvnQ",
+            "faa0dddb8891c4cf76a5806dde80ebb51e8f9d441c2a98bca900f43cd1223b5a",
+            28800);
   }
 
   @Override
