@@ -5,6 +5,7 @@ import akka.javasdk.annotations.http.Get;
 import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
 import fitbit.FitbitClient;
+import io.akka.health.agent.application.FitbitTool;
 import io.akka.health.agent.application.HealthAgent;
 import io.akka.health.agent.domain.StreamedResponse;
 import akka.javasdk.annotations.Acl;
@@ -13,6 +14,8 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.http.HttpResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.LocalDate;
 
 
 @Acl(allow = @Acl.Matcher(principal = Acl.Principal.ALL))
@@ -24,11 +27,11 @@ public class AgentEndpoint {
   public record AskRequest(String userId, String sessionId, String question) {}
 
   private final HealthAgent agent;
-  private final HttpClient httpClient;
+  private final FitbitClient fitbitClient;
 
-  public AgentEndpoint(HealthAgent agent, HttpClientProvider httpClientProvider) {
+  public AgentEndpoint(HealthAgent agent, FitbitClient fitbitClient) {
     this.agent = agent;
-    this.httpClient = httpClientProvider.httpClientFor("https://akka.io/");
+    this.fitbitClient = fitbitClient;
   }
 
   @Post("/ask")
@@ -45,8 +48,17 @@ public class AgentEndpoint {
   public HttpResponse getAccessToken() {
     log.info("Received request: getAccessToken");
 
-    FitbitClient fitbitClient = new FitbitClient(httpClient);
     fitbitClient.getAccessTokenWithClientCredentials();
+//    fitbitClient.setTokens(
+//            "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyM1E5NVIiLCJzdWIiOiI3RlI3WDIiLCJpc3MiOiJGaXRiaXQiLCJ0eXAiOiJhY2Nlc3NfdG9rZW4iLCJzY29wZXMiOiJyc29jIHJlY2cgcnNldCByaXJuIHJveHkgcm51dCBycHJvIHJzbGUgcmNmIHJhY3QgcmxvYyBycmVzIHJ3ZWkgcmhyIHJ0ZW0iLCJleHAiOjE3NDYyMDkzOTEsImlhdCI6MTc0NjE4MDU5MX0.5eY9PKTApPqRS7RLZ9vpBYZEN5poSLCPfubn8X3bvnQ",
+//            "faa0dddb8891c4cf76a5806dde80ebb51e8f9d441c2a98bca900f43cd1223b5a",
+//            28800);
+
+    var tool = new FitbitTool(fitbitClient);
+    // today
+    var today = LocalDate.now();
+    var steps = tool.getStepsForDay(today);
+    log.info("Steps: {}", steps);
 
     return HttpResponses.ok();
   }

@@ -1,6 +1,7 @@
 package fitbit;
 
 import akka.actor.ActorSystem;
+import akka.javasdk.testkit.TestKitSupport;
 import fitbit.model.*;
 import jnr.constants.platform.Local;
 import org.junit.jupiter.api.AfterAll;
@@ -17,13 +18,13 @@ import java.util.concurrent.TimeoutException;
 /**
  * Test class for FitbitClient that uses a provided access token.
  */
-public class FitbitClientTest {
+public class FitbitClientTest extends TestKitSupport {
 
     private static ActorSystem system;
     private static FitbitClient fitbitClient;
 
     // If expired, you need to create a new one using the Main class
-    private static final String ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyM1E5NVIiLCJzdWIiOiI3RlI3WDIiLCJpc3MiOiJGaXRiaXQiLCJ0eXAiOiJhY2Nlc3NfdG9rZW4iLCJzY29wZXMiOiJyd2VpIHJociByYWN0IHJzbGUiLCJleHAiOjE3NDU1MzgzMjMsImlhdCI6MTc0NTUwOTUyM30.oFuUSV_B_cPkebMKk0cwx59bVYcsjDPtcOtCHa9MnEw";
+    private static final String ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyM1E5NVIiLCJzdWIiOiI3RlI3WDIiLCJpc3MiOiJGaXRiaXQiLCJ0eXAiOiJhY2Nlc3NfdG9rZW4iLCJzY29wZXMiOiJyc29jIHJlY2cgcnNldCByaXJuIHJveHkgcm51dCBycHJvIHJzbGUgcmNmIHJhY3QgcmxvYyBycmVzIHJ3ZWkgcmhyIHJ0ZW0iLCJleHAiOjE3NDYyMDkzOTEsImlhdCI6MTc0NjE4MDU5MX0.5eY9PKTApPqRS7RLZ9vpBYZEN5poSLCPfubn8X3bvnQ";
 
     @BeforeAll
     public static void setup() {

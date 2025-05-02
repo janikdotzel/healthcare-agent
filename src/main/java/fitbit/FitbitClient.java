@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import fitbit.model.*;
 import fitbit.parser.FitbitParser;
 import io.akka.health.common.KeyUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -14,15 +16,17 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
 public class FitbitClient {
-    private static final String AUTH_URL = "https://www.fitbit.com/oauth2/authorize";
-    private static final String TOKEN_URL = "https://api.fitbit.com/oauth2/token";
-    private static final String API_BASE_URL = "https://api.fitbit.com";
+//    private static final String AUTH_URL = "/oauth2/authorize"; // The base url is already passed into the FitbitClient in the Boostrap class
+    private static final String TOKEN_URL = "/oauth2/token"; // The base url is already passed into the FitbitClient in the Boostrap class
+    private static final String API_BASE_URL = ""; // The base url is already passed into the FitbitClient in the Boostrap class
     private static final String REDIRECT_URI = "https://janikdotzel.com/";
-    private static final String SCOPE = "heartrate activity sleep weight";
+//    private static final String SCOPE = "heartrate activity sleep weight";
+    private static final Logger logger = LoggerFactory.getLogger(FitbitClient.class);
 
     private final ObjectMapper objectMapper;
     private final FitbitParser parser;
@@ -47,14 +51,14 @@ public class FitbitClient {
         }
     }
 
-    public String getAuthorizationUrl() {
-        return AUTH_URL + "?" +
-                "response_type=code" +
-                "&client_id=" + clientId +
-                "&redirect_uri=" + URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8) +
-                "&scope=" + URLEncoder.encode(SCOPE, StandardCharsets.UTF_8) +
-                "&expires_in=604800"; // 7 days
-    }
+//    public String getAuthorizationUrl() {
+//        return AUTH_URL + "?" +
+//                "response_type=code" +
+//                "&client_id=" + clientId +
+//                "&redirect_uri=" + URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8) +
+//                "&scope=" + URLEncoder.encode(SCOPE, StandardCharsets.UTF_8) +
+//                "&expires_in=604800"; // 7 days
+//    }
 
     public TokenResponse exchangeCodeForAccessToken(String code) {
         String authHeader = "Basic " + Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
@@ -130,31 +134,58 @@ public class FitbitClient {
      */
     public TokenResponse getAccessTokenWithClientCredentials() {
         String authHeader = "Basic " + Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
+        logger.info("Using client ID: {}", clientId);
+        logger.debug("Authorization header: {}", authHeader);
 
         Map<String, String> formData = new HashMap<>();
         formData.put("grant_type", "client_credentials");
-        formData.put("scope", SCOPE);
+
+        // For client credentials flow in Fitbit API, we need to use specific scopes
+        // According to Fitbit API documentation, scopes should be in the format "resource:action"
+        formData.put("scope", "heartrate:read activity:read sleep:read weight:read");
+
+        logger.info("Requesting scopes: {}", formData.get("scope"));
 
         String formDataString = formData.entrySet().stream()
                 .map(e -> e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
                 .reduce((a, b) -> a + "&" + b)
                 .orElse("");
 
+        logger.debug("Request body: {}", formDataString);
+        logger.info("Sending request to Fitbit API token endpoint: {}", TOKEN_URL);
+
         var response = httpClient
                 .POST(TOKEN_URL)
                 .addHeader("Content-Type", "application/x-www-form-urlencoded")
+                .addHeader("Accept", "application/json")
                 .addHeader("Authorization", authHeader)
                 .withRequestBody(formDataString)
                 .invoke();
 
-        if (response.status().intValue() == 200) {
+        int statusCode = response.status().intValue();
+        String responseBody = response.body().utf8String();
+
+        logger.info("Received response with status code: {}", statusCode);
+        logger.debug("Response body: {}", responseBody);
+
+        if (statusCode == 200) {
             try {
-                return parseTokenResponse(response.body().utf8String());
+                logger.info("Successfully obtained access token");
+                return parseTokenResponse(responseBody);
             } catch (Exception e) {
+                logger.error("Failed to parse token response", e);
                 throw new RuntimeException("Failed to parse token response", e);
             }
         } else {
-            throw new RuntimeException("Failed to get token with client credentials: " + response.status() + " - " + response.body().utf8String());
+            logger.error("Failed to get token with client credentials: {} - {}", statusCode, responseBody);
+
+            // Check for specific error conditions
+            if (statusCode == 403) {
+                logger.error("403 Forbidden error. This could be due to incorrect client ID/secret, " +
+                             "invalid scope, or the application not being registered as an OAuth 2.0 Server type.");
+            }
+
+            throw new RuntimeException("Failed to get token with client credentials: " + statusCode + " - " + responseBody);
         }
     }
 
@@ -256,6 +287,10 @@ public class FitbitClient {
                 .GET(url)
                 .addCredentials(HttpCredentials.createOAuth2BearerToken(accessToken))
                 .invoke();
+
+        logger.info("Response: {}", response.body().utf8String());
+        logger.info("Status: {}", response.status().intValue());
+
 
         if (response.status().intValue() == 200) {
             try {

@@ -29,7 +29,7 @@ public class FitbitTool {
     private void initializeClientCredentials() {
         try {
             logger.info("Initializing Fitbit client with client credentials");
-            var tokenResponse = fitbitClient.getAccessTokenWithClientCredentials();
+//            var tokenResponse = fitbitClient.getAccessTokenWithClientCredentials();
             logger.info("Successfully obtained access token using client credentials");
         } catch (Exception e) {
             logger.error("Failed to initialize Fitbit client with client credentials", e);

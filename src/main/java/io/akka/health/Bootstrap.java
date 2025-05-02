@@ -1,6 +1,5 @@
 package io.akka.health;
 
-import akka.javasdk.http.HttpClient;
 import akka.javasdk.http.HttpClientProvider;
 import fitbit.FitbitClient;
 import io.akka.health.agent.application.HealthAgent;
@@ -20,7 +19,6 @@ public class Bootstrap implements ServiceSetup {
   private final Logger logger = LoggerFactory.getLogger(getClass());
   private final MongoClient mongoClient;
   private final ComponentClient componentClient;
-  private final HttpClient httpClient;
   private final FitbitClient fitbitClient;
 
   public Bootstrap(ComponentClient componentClient, HttpClientProvider httpClientProvider, com.typesafe.config.Config config) {
@@ -34,9 +32,7 @@ public class Bootstrap implements ServiceSetup {
 
     this.componentClient = componentClient;
     this.mongoClient = MongoClients.create(KeyUtils.readMongoDbUri());
-    // If it is a dns name prefixed with "http://" or "https://" it will connect to services available on the public internet.
-    this.httpClient = httpClientProvider.httpClientFor("https://akka.io/");
-    this.fitbitClient = new FitbitClient(httpClient);
+    this.fitbitClient = new FitbitClient(httpClientProvider.httpClientFor("https://api.fitbit.com"));
   }
 
   @Override
@@ -53,7 +49,7 @@ public class Bootstrap implements ServiceSetup {
         }
 
         if (cls.equals(FitbitClient.class)) {
-            return (T) new FitbitClient(httpClient);
+            return (T) fitbitClient;
         }
         return null;
       }
