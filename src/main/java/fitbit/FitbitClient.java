@@ -120,6 +120,44 @@ public class FitbitClient {
         }
     }
 
+    /**
+     * Gets an access token using client credentials flow.
+     * This method is intended for server-to-server authentication without user interaction.
+     * The Fitbit application must be registered as an "OAuth 2.0 Server" type.
+     *
+     * @return TokenResponse containing the access token
+     * @throws RuntimeException if the token request fails
+     */
+    public TokenResponse getAccessTokenWithClientCredentials() {
+        String authHeader = "Basic " + Base64.getEncoder().encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
+
+        Map<String, String> formData = new HashMap<>();
+        formData.put("grant_type", "client_credentials");
+        formData.put("scope", SCOPE);
+
+        String formDataString = formData.entrySet().stream()
+                .map(e -> e.getKey() + "=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
+                .reduce((a, b) -> a + "&" + b)
+                .orElse("");
+
+        var response = httpClient
+                .POST(TOKEN_URL)
+                .addHeader("Content-Type", "application/x-www-form-urlencoded")
+                .addHeader("Authorization", authHeader)
+                .withRequestBody(formDataString)
+                .invoke();
+
+        if (response.status().intValue() == 200) {
+            try {
+                return parseTokenResponse(response.body().utf8String());
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse token response", e);
+            }
+        } else {
+            throw new RuntimeException("Failed to get token with client credentials: " + response.status() + " - " + response.body().utf8String());
+        }
+    }
+
     public HeartRateData getHeartRateByDate(LocalDate date) {
         ensureValidToken();
 
@@ -208,7 +246,6 @@ public class FitbitClient {
         }
     }
 
-
     public DailyActivitySummary getDailyActivitySummary(LocalDate date) {
         ensureValidToken();
 
@@ -242,9 +279,7 @@ public class FitbitClient {
     private TokenResponse parseTokenResponse(String json) {
         try {
             TokenResponse response = objectMapper.readValue(json, TokenResponse.class);
-            this.accessToken = response.accessToken;
-            this.refreshToken = response.refreshToken;
-            this.expiresAt = System.currentTimeMillis() + (response.expiresIn * 1000);
+            setTokens(response.accessToken, response.refreshToken, System.currentTimeMillis() + (response.expiresIn * 1000));
             return response;
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse token response", e);
