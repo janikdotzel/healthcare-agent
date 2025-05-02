@@ -4,6 +4,7 @@ import akka.actor.ActorSystem;
 import akka.javasdk.testkit.TestKitSupport;
 import fitbit.model.*;
 import jnr.constants.platform.Local;
+import org.apache.http.impl.BHttpConnectionBase;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -21,34 +22,14 @@ import java.util.concurrent.TimeoutException;
 public class FitbitClientTest extends TestKitSupport {
 
     private static ActorSystem system;
-    private static FitbitClient fitbitClient;
+    private final FitbitClient fitbitClient = new FitbitClient(httpClient);
 
-    // If expired, you need to create a new one using the Main class
     private static final String ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyM1E5NVIiLCJzdWIiOiI3RlI3WDIiLCJpc3MiOiJGaXRiaXQiLCJ0eXAiOiJhY2Nlc3NfdG9rZW4iLCJzY29wZXMiOiJyc29jIHJlY2cgcnNldCByaXJuIHJveHkgcm51dCBycHJvIHJzbGUgcmNmIHJhY3QgcmxvYyBycmVzIHJ3ZWkgcmhyIHJ0ZW0iLCJleHAiOjE3NDYyMDkzOTEsImlhdCI6MTc0NjE4MDU5MX0.5eY9PKTApPqRS7RLZ9vpBYZEN5poSLCPfubn8X3bvnQ";
 
-    @BeforeAll
-    public static void setup() {
-        // Create an ActorSystem for testing
-        system = ActorSystem.create("fitbit-test");
-
-        // Initialize the FitbitClient
-        fitbitClient = new FitbitClient(null);
-
-        // Set the access token manually
-        // Note: We're setting a null refresh token and a long expiry time since we only need the access token for this test
-        fitbitClient.setTokens(ACCESS_TOKEN, null, 3600);
-    }
-
-    @AfterAll
-    public static void teardown() {
-        // Terminate the ActorSystem after tests
-        if (system != null) {
-            system.terminate();
-        }
-    }
-
     @Test
-    public void testGetHeartRateData() throws ExecutionException, InterruptedException, TimeoutException {
+    public void testGetHeartRateData() {
+        fitbitClient.setTokens(ACCESS_TOKEN, null, 3600);
+
         // Get heart rate data for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
         HeartRateData heartRateData = fitbitClient.getHeartRateByDate(testDate);
@@ -73,7 +54,9 @@ public class FitbitClientTest extends TestKitSupport {
     }
 
     @Test
-    public void testGetActiveZoneMinutesByDate() throws ExecutionException, InterruptedException, TimeoutException {
+    public void testGetActiveZoneMinutesByDate() {
+        fitbitClient.setTokens(ACCESS_TOKEN, null, 3600);
+
         // Get Active Zone Minutes data for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
         ActiveZoneMinutesData azmData = fitbitClient.getActiveZoneMinutesByDate(testDate);
@@ -94,7 +77,9 @@ public class FitbitClientTest extends TestKitSupport {
     }
 
     @Test
-    public void testGetSleepLogByDate() throws ExecutionException, InterruptedException, TimeoutException {
+    public void testGetSleepLogByDate() {
+        fitbitClient.setTokens(ACCESS_TOKEN, null, 3600);
+
         // Get sleep log data for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
         SleepLogData sleepData = fitbitClient.getSleepLogByDate(testDate);
@@ -115,7 +100,9 @@ public class FitbitClientTest extends TestKitSupport {
     }
 
     @Test
-    public void testGetWeightLogByDate() throws ExecutionException, InterruptedException, TimeoutException {
+    public void testGetWeightLogByDate() {
+        fitbitClient.setTokens(ACCESS_TOKEN, null, 3600);
+
         // Get weight log data for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
         WeightLogData weightData = fitbitClient.getWeightLogByDate(testDate);
@@ -140,7 +127,9 @@ public class FitbitClientTest extends TestKitSupport {
     }
 
     @Test
-    public void testGetDailyActivitySummary() throws ExecutionException, InterruptedException, TimeoutException {
+    public void testGetDailyActivitySummary() {
+        fitbitClient.setTokens(ACCESS_TOKEN, null, 3600);
+
         // Get daily activity summary for the 24th of april 2025
         LocalDate testDate = LocalDate.of(2025, 4, 24);
         DailyActivitySummary activityData = fitbitClient.getDailyActivitySummary(testDate);
