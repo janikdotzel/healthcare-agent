@@ -1,6 +1,7 @@
 package io.akka.health.agent;
 
 import akka.actor.ActorSystem;
+import fitbit.FitbitClient;
 import fitbit.MockFitbitClient;
 import fitbit.model.*;
 import io.akka.health.agent.application.FitbitTool;
