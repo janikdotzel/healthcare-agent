@@ -1,6 +1,7 @@
 package io.akka.health;
 
 import akka.javasdk.http.HttpClient;
+import akka.javasdk.http.HttpClientProvider;
 import fitbit.FitbitClient;
 import io.akka.health.agent.application.HealthAgent;
 import io.akka.health.common.KeyUtils;
@@ -22,7 +23,7 @@ public class Bootstrap implements ServiceSetup {
   private final HttpClient httpClient;
   private final FitbitClient fitbitClient;
 
-  public Bootstrap(ComponentClient componentClient, HttpClient httpClient) {
+  public Bootstrap(ComponentClient componentClient, HttpClientProvider httpClientProvider, com.typesafe.config.Config config) {
 
     if (!KeyUtils.hasValidKeys()) {
       throw new IllegalStateException(
@@ -33,7 +34,8 @@ public class Bootstrap implements ServiceSetup {
 
     this.componentClient = componentClient;
     this.mongoClient = MongoClients.create(KeyUtils.readMongoDbUri());
-    this.httpClient = httpClient;
+    // If it is a dns name prefixed with "http://" or "https://" it will connect to services available on the public internet.
+    this.httpClient = httpClientProvider.httpClientFor("https://akka.io/");
     this.fitbitClient = new FitbitClient(httpClient);
   }
 

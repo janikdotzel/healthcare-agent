@@ -1,6 +1,5 @@
 package io.akka.health.agent.application;
 
-import akka.Done;
 import akka.NotUsed;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
@@ -11,16 +10,13 @@ import io.akka.health.agent.domain.StreamedResponse;
 import akka.javasdk.client.ComponentClient;
 import akka.stream.javadsl.Source;
 import com.mongodb.client.MongoClient;
-import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.data.message.UserMessage;
 import io.akka.health.common.OpenAiUtils;
 import io.akka.health.ui.application.SessionEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 public class HealthAgent extends Agent {
 

@@ -20,12 +20,7 @@ public class SensorTool {
         logger.info("Getting all sensor data for user {}", userId);
         return componentClient.forView()
                 .method(SensorView::getSensorDataByByUser)
-                .invokeAsync(userId)
-                .toCompletableFuture()
-                //TODO remove blocking call
-
-                // We don't want blocking calls, but langchain4j doesn't support an async tool call...
-                .join();
+                .invoke(userId);
     }
 }
 
