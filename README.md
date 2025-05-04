@@ -53,45 +53,10 @@ Talk to LLMs, Vector DBs, MCP Servers, enterprise APIs and other systems
 #### Agent Orchestration
 Execute reliably. Durable workflows that ensure agent actions and LLM calls execute reliably, even in the face of failures, timeouts, hallucinations, or restarts.
 
+> Currently, the agent is not orchestrated. 
+> It does LLM calls and uses the SensorTool, FitbitTool as well as doing RAG on Medical Records. But without any safety net.
 
 
-
-
-
-
-
-### Event Sourced Entities
-- **PatientEntity**: Core domain entity that represents a patient and their health data
-- **MedicalRecordEntity**: Stores patient medical history
-- Events: HealthMetricRecorded, RecommendationProvided, AlertGenerated
-
-### Key Value Entities
-- **UserPreferencesEntity**: User settings and notification preferences
-- **ThresholdConfigEntity**: Health metric thresholds for alerts
-
-### Endpoints
-- **HealthDataEndpoint (HTTP)**: API for wearable devices to push data
-- **PatientQueryEndpoint (HTTP)**: API for patient queries and chat interface
-- **MedicalSystemEndpoint (gRPC)**: Integration with EHR systems
-- **WebSocketEndpoint**: Real-time communication with the web UI
-
-### Views
-- **PatientHealthView**: Materialized view of patient health data for reporting
-- **AlertsView**: Aggregated view of patient alerts
-- **RecommendationsView**: View of all recommendations for a patient
-
-### Workflows
-- **HealthMonitoringWorkflow**: Long-running process to monitor patient health metrics
-- **WeeklyReportWorkflow**: Process to generate weekly health reports
-- **AlertEscalationWorkflow**: Handles alert notifications and escalations
-
-### Consumers
-- **WearableDataConsumer**: Processes incoming wearable device data
-- **MedicalRecordConsumer**: Processes updates from EHR systems
-
-### Timed Actions
-- **WeeklyReportScheduler**: Schedules generation of weekly reports
-- **HealthCheckScheduler**: Periodically checks health metrics against thresholds
 
 ## Usage
 

@@ -47,15 +47,12 @@ public class HealthAgent extends AbstractAgent {
     // we want the SessionEntity id to be unique for each user session,
     // therefore we use a composite key of userId and sessionId
     var compositeEntityId = userId + ":" + sessionId;
+    var sessionHistory = fetchSessionHistory(compositeEntityId);
+    var assistant = buildAiService(compositeEntityId, userId, sessionHistory);
 
-    var sessionHistoryFuture = fetchSessionHistory(compositeEntityId);
-
-    var assistantFuture = sessionHistoryFuture.thenApply(messages -> buildAiService(compositeEntityId, userId, messages));
-
-    return Source.completionStage(assistantFuture)
-      // Call the llm and get the response streamed back
-      .flatMapConcat(assistant -> AkkaStreamUtils.toAkkaSource(assistant.chat(question)))
-        .mapAsync(1, res -> {
+    // Call the llm and get the response as a streaming source
+    var source = AkkaStreamUtils.toAkkaSource(assistant.chat(question));
+    return source.map(res -> {
           if (res.finished()) { // is the last message?
             logger.debug("Exchange finished. Total input tokens {}, total output tokens {}", res.inputTokens(), res.outputTokens());
 
@@ -68,16 +65,14 @@ public class HealthAgent extends AbstractAgent {
 
             logger.info("Complete Response: {}", res.content());
 
-            // since the full response has already been streamed,
-            // the last message can be transformed to an empty message
-            return addExchangeToSession(compositeEntityId, exchange)
-                    .thenApply(__ -> StreamResponse.empty());
+            // since the full response has already been streamed, the last message can be transformed to an empty message
+            addExchangeToSession(compositeEntityId, exchange);
+            return StreamResponse.empty();
           }
           else {
             logger.debug("partial message '{}'", res.content());
-            // other messages are streamed out to the caller
-            // (those are the responseTokensCount emitted by the llm)
-            return CompletableFuture.completedFuture(res);
+            // other messages are streamed out to the called (those are the responseTokensCount emitted by the llm)
+            return res;
           }
         });
   }

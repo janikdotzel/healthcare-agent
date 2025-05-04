@@ -18,23 +18,6 @@ public class FitbitTool {
 
     public FitbitTool(FitbitClient fitbitClient) {
         this.fitbitClient = fitbitClient;
-        initializeClientCredentials();
-    }
-
-    /**
-     * Initializes the Fitbit client with client credentials.
-     * This method automatically authenticates the client using the client credentials flow,
-     * which is suitable for server applications where no user interaction is possible.
-     */
-    private void initializeClientCredentials() {
-        try {
-            logger.info("Initializing Fitbit client with client credentials");
-//            var tokenResponse = fitbitClient.getAccessTokenWithClientCredentials();
-            logger.info("Successfully obtained access token using client credentials");
-        } catch (Exception e) {
-            logger.error("Failed to initialize Fitbit client with client credentials", e);
-            throw new RuntimeException("Failed to initialize Fitbit client with client credentials", e);
-        }
     }
 
     @Tool("Get resting heart rate for a specific date")

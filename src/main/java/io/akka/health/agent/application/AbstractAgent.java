@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.concurrent.CompletionStage;
 
 public abstract class AbstractAgent {
 
@@ -22,19 +21,20 @@ public abstract class AbstractAgent {
         this.componentClient = componentClient;
     }
 
-    protected CompletionStage<Done> addExchangeToSession(String sessionId, SessionEntity.Exchange conversation) {
+    protected Done addExchangeToSession(String sessionId, SessionEntity.Exchange conversation) {
         return componentClient
                 .forEventSourcedEntity(sessionId)
                 .method(SessionEntity::addExchange)
-                .invokeAsync(conversation);
+                .invoke(conversation);
     }
 
-    protected CompletionStage<List<ChatMessage>> fetchSessionHistory(String sessionId) {
-        return componentClient
+    protected List<ChatMessage> fetchSessionHistory(String sessionId) {
+        var history = componentClient
                 .forEventSourcedEntity(sessionId)
-                .method(SessionEntity::getHistory).invokeAsync()
-                .thenApply(messages -> messages.messages().stream()
-                        .map(this::toChatMessage).toList());
+                .method(SessionEntity::getHistory)
+                .invoke();
+
+        return history.messages().stream().map(this::toChatMessage).toList();
     }
 
     private ChatMessage toChatMessage(SessionEntity.Message msg) {
