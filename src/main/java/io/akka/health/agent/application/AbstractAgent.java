@@ -12,13 +12,13 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 
-public class Agent {
+public abstract class AbstractAgent {
 
-    private final static Logger logger = LoggerFactory.getLogger(Agent.class);
+    private final static Logger logger = LoggerFactory.getLogger(AbstractAgent.class);
 
     private final ComponentClient componentClient;
 
-    public Agent(ComponentClient componentClient) {
+    public AbstractAgent(ComponentClient componentClient) {
         this.componentClient = componentClient;
     }
 

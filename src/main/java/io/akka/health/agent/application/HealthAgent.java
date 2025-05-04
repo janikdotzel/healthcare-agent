@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class HealthAgent extends Agent {
+public class HealthAgent extends AbstractAgent {
 
   private final static Logger logger = LoggerFactory.getLogger(HealthAgent.class);
   private final ComponentClient componentClient;
