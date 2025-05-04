@@ -1,7 +1,7 @@
 package io.akka.health;
 
 import akka.javasdk.http.HttpClientProvider;
-import fitbit.FitbitClient;
+import io.akka.fitbit.FitbitClient;
 import io.akka.health.agent.application.HealthAgent;
 import io.akka.health.common.KeyUtils;
 import akka.javasdk.DependencyProvider;

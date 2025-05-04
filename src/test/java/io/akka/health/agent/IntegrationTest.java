@@ -3,6 +3,7 @@ package io.akka.health.agent;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.testkit.TestKitSupport;
 import com.mongodb.client.MongoClients;
+import io.akka.fitbit.FitbitClient;
 import io.akka.health.agent.application.HealthAgent;
 import io.akka.health.common.KeyUtils;
 import io.akka.health.ui.application.SessionEntity;
@@ -34,7 +35,7 @@ public class IntegrationTest extends TestKitSupport {
         var userId = "user-1";
         var sessionId = "session-1";
         var compositeId = userId + ":" + sessionId;
-        var agent = new HealthAgent(componentClient, MongoClients.create(KeyUtils.readMongoDbUri()), new fitbit.FitbitClient(httpClient));
+        var agent = new HealthAgent(componentClient, MongoClients.create(KeyUtils.readMongoDbUri()), new FitbitClient(httpClient));
 
         // Check that the agent used RAG by asking a question that requires it
         var question = "What is the reason for the patient's visit?";

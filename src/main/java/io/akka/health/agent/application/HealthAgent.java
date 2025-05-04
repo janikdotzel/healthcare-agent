@@ -3,10 +3,10 @@ package io.akka.health.agent.application;
 import akka.NotUsed;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.TokenStream;
-import fitbit.FitbitClient;
+import io.akka.fitbit.FitbitClient;
 import io.akka.health.common.AkkaStreamUtils;
 import io.akka.health.common.MongoDbUtils;
-import io.akka.health.agent.domain.StreamedResponse;
+import io.akka.health.agent.domain.StreamResponse;
 import akka.javasdk.client.ComponentClient;
 import akka.stream.javadsl.Source;
 import com.mongodb.client.MongoClient;
@@ -42,7 +42,7 @@ public class HealthAgent extends Agent {
     this.fitbitClient = fitbitClient;
   }
 
-  public Source<StreamedResponse, NotUsed> ask(String userId, String sessionId, String question) {
+  public Source<StreamResponse, NotUsed> ask(String userId, String sessionId, String question) {
 
     // we want the SessionEntity id to be unique for each user session,
     // therefore we use a composite key of userId and sessionId
@@ -71,7 +71,7 @@ public class HealthAgent extends Agent {
             // since the full response has already been streamed,
             // the last message can be transformed to an empty message
             return addExchangeToSession(compositeEntityId, exchange)
-                    .thenApply(__ -> StreamedResponse.empty());
+                    .thenApply(__ -> StreamResponse.empty());
           }
           else {
             logger.debug("partial message '{}'", res.content());
