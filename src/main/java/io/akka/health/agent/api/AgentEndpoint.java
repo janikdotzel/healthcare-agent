@@ -1,6 +1,9 @@
 package io.akka.health.agent.api;
 
 import akka.http.javadsl.model.*;
+import akka.javasdk.client.ComponentClient;
+import com.mongodb.client.MongoClient;
+import io.akka.fitbit.FitbitClient;
 import io.akka.health.agent.application.HealthAgent;
 import io.akka.health.agent.domain.StreamResponse;
 import akka.javasdk.annotations.Acl;
@@ -15,23 +18,31 @@ import org.slf4j.LoggerFactory;
 @HttpEndpoint("/agent")
 public class AgentEndpoint {
 
-  private static final Logger log = LoggerFactory.getLogger(AgentEndpoint.class);
+    private static final Logger log = LoggerFactory.getLogger(AgentEndpoint.class);
 
-  public record AskRequest(String userId, String sessionId, String question) {}
+    public record AskRequest(String userId, String sessionId, String question) {
+    }
 
-  private final HealthAgent agent;
+    private final ComponentClient componentClient;
+    private final MongoClient mongoClient;
+    private final FitbitClient fitbitClient;
 
-  public AgentEndpoint(HealthAgent agent) {
-    this.agent = agent;
-  }
 
-  @Post("/ask")
-  public HttpResponse ask(AskRequest request) {
-    log.info("Received request: {}", request);
-    var response = agent
-        .ask(request.userId, request.sessionId, request.question)
-        .map(StreamResponse::content);
+    public AgentEndpoint(ComponentClient componentClient, MongoClient mongoClient, FitbitClient fitbitClient) {
+        this.componentClient = componentClient;
+        this.mongoClient = mongoClient;
+        this.fitbitClient = fitbitClient;
+    }
 
-    return HttpResponses.serverSentEvents(response);
-  }
+    @Post("/ask")
+    public HttpResponse ask(AskRequest request) {
+        log.info("Received request: {}", request);
+
+        var agent = new HealthAgent(componentClient, mongoClient, fitbitClient, request.userId, request.sessionId);
+        var response = agent
+                .ask(request.question)
+                .map(StreamResponse::content);
+
+        return HttpResponses.serverSentEvents(response);
+    }
 }

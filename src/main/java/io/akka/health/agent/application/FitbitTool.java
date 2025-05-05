@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class FitbitTool {
 
@@ -34,14 +33,14 @@ public class FitbitTool {
         return value.restingHeartRate();
     }
 
-    @Tool("Check if heart rate (in bpm) exceeded the range for a specific date. If exceeded, it returns the value that exceeded the range the most.")
-    public Optional<Integer> isHeartRateOutsideSafeRange(LocalDate date, int minThreshold, int maxThreshold) {
+    @Tool("Check if heart rate (in bpm) exceeded the range for a specific date. If exceeded, it returns the value that exceeded the range the most. Otherwise it reurns 0.")
+    public Integer isHeartRateOutsideSafeRange(LocalDate date, int minThreshold, int maxThreshold) {
         logger.info("Checking heart rate for date {} with thresholds {} - {}", date, minThreshold, maxThreshold);
 
         var data = fitbitClient.getHeartRateByDate(date);
 
         if (data.activitiesHeartIntraday() == null || data.activitiesHeartIntraday().dataset() == null || data.activitiesHeartIntraday().dataset().isEmpty()) {
-            return Optional.empty();
+            return 0;
         }
 
         List<HeartRateData.HeartRateDataPoint> dataPoints = data.activitiesHeartIntraday().dataset();
@@ -65,10 +64,10 @@ public class FitbitTool {
             }
         }
 
-        return mostExtremeValue != null ? Optional.of(mostExtremeValue) : Optional.empty();
+        return mostExtremeValue != null ? mostExtremeValue : 0;
     }
 
-    @Tool("Get total active minutes fora specific date range (usually one week).")
+    @Tool("Get total active minutes for a specific date range (usually one week).")
     public Integer getActiveMinutesInWeek(LocalDate startDate, LocalDate endDate) {
         logger.info("Getting active minutes from {} to {}", startDate, endDate);
         List<ActiveZoneMinutesData> list = new ArrayList<>();

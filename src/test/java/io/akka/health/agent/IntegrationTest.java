@@ -35,11 +35,11 @@ public class IntegrationTest extends TestKitSupport {
         var userId = "user-1";
         var sessionId = "session-1";
         var compositeId = userId + ":" + sessionId;
-        var agent = new HealthAgent(componentClient, MongoClients.create(KeyUtils.readMongoDbUri()), new FitbitClient(httpClient));
+        var agent = new HealthAgent(componentClient, MongoClients.create(KeyUtils.readMongoDbUri()), new FitbitClient(httpClient), userId, sessionId);
 
         // Check that the agent used RAG by asking a question that requires it
         var question = "What is the reason for the patient's visit?";
-        var streamResponse = agent.ask(userId, sessionId, question);
+        var streamResponse = agent.ask(question);
         var answer = await(
                 streamResponse.runFold("", (acc, partial) -> acc + partial.content(), testKit.getMaterializer()),
                 Duration.ofSeconds(30));

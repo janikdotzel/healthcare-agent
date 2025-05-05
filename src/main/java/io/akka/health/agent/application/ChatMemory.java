@@ -21,7 +21,7 @@ public class ChatMemory {
         chatMemoryStore.updateMessages(sessionId, messages);
 
         return MessageWindowChatMemory.builder()
-                .maxMessages(2000)
+                .maxMessages(100)
                 .chatMemoryStore(chatMemoryStore)
                 .build();
     }

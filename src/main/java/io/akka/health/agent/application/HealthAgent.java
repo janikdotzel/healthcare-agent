@@ -30,8 +30,10 @@ public class HealthAgent extends AbstractAgent {
     You have access to the user's medical records.
     Answer the question in a concise way.
     """;
+  private final String userId;
+  private final String sessionId;
 
-  public HealthAgent(ComponentClient componentClient, MongoClient mongoClient, FitbitClient fitbitClient) {
+  public HealthAgent(ComponentClient componentClient, MongoClient mongoClient, FitbitClient fitbitClient, String userId, String sessionId) {
     super(componentClient);
     this.componentClient = componentClient;
     this.mongoDbConfig = new MongoDbUtils.MongoDbConfig(
@@ -40,9 +42,11 @@ public class HealthAgent extends AbstractAgent {
         "medicalrecord",
         "medicalrecord-index");
     this.fitbitClient = fitbitClient;
+    this.userId = userId;
+    this.sessionId = sessionId;
   }
 
-  public Source<StreamResponse, NotUsed> ask(String userId, String sessionId, String question) {
+  public Source<StreamResponse, NotUsed> ask(String question) {
 
     // we want the SessionEntity id to be unique for each user session,
     // therefore we use a composite key of userId and sessionId
