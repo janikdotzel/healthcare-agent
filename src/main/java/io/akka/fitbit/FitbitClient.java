@@ -47,9 +47,13 @@ public class FitbitClient {
         this.clientSecret = KeyUtils.readFitbitClientSecret();
         this.httpClient = httpClient;
 
-        if (!KeyUtils.hasFitbitKeys()) {
-            throw new IllegalStateException(
-                    "Fitbit API keys not found. Make sure FITBIT_CLIENT_ID and FITBIT_CLIENT_SECRET are defined as environment variables or in the .env file.");
+        if (KeyUtils.hasFitbitAccessToken()) {
+            setTokens(KeyUtils.readFitbitAccessToken(), "", 28800);
+            logger.info("Using access token from environment variable");
+        } else if (KeyUtils.hasFitbitKeys()) {
+            logger.info("Using client ID and secret from environment variable");
+        } else {
+            throw new IllegalStateException("Fitbit API keys and Access Token not found. Make sure FITBIT_CLIENT_ID and FITBIT_CLIENT_SECRET or FITBIT_ACCESS_TOKEN are defined as environment variables or in the .env file.");
         }
     }
 
