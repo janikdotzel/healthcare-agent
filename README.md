@@ -56,8 +56,6 @@ Execute reliably. Durable workflows that ensure agent actions and LLM calls exec
 > Currently, the agent is not orchestrated. 
 > It does LLM calls and uses the SensorTool, FitbitTool as well as doing RAG on Medical Records. But without any safety net.
 
-
-
 ## Usage
 
 Start the service locally:
@@ -67,12 +65,7 @@ mvn compile exec:java
 
 The chat is available at:
 ```shell
-curl http://localhost:9000/
-```
-
-Optionally, you can use the open-webui:
-```shell
-open-webui serve
+http://localhost:9000/
 ```
 
 Open the Akka Local Console for monitoring:
@@ -82,12 +75,40 @@ akka local console
 
 ## Testing
 
+### Ingesting Data
+
+Add Sensor Data with the following command:
+```shell
+curl -X POST http://localhost:9000/ingest/sensor -H "Content-Type: application/json" -d '{
+  "userId": "demo-user",
+  "data": {
+    "userId": "demo-user",
+    "source": "smartwatch",
+    "description": "heart rate",
+    "value": "90 bpm"
+  }
+}'
+```
+
 Add Medical Records with the following command:
 ```shell
 curl -X POST http://localhost:9000/ingest/medical-record -H "Content-Type: application/json" -d '{
-  "userId": "user-2",
+  "userId": "demo-user",
   "data": {
-    "patientId": "user-2",
+    "patientId": "demo-user",
+    "reasonForVisit": "Severe lower back pain",
+    "diagnosis": "Pinched nerve",
+    "prescribedMedication": "Ibuprofen and massage therapy",
+    "notes": "Has an office job. Sits for long hours. Doesnt do any exercise."
+  }
+}'
+```
+
+```shell
+curl -X POST http://localhost:9000/ingest/medical-record -H "Content-Type: application/json" -d '{
+  "userId": "demo-user",
+  "data": {
+    "patientId": "demo-user",
     "reasonForVisit": "Routine check-up",
     "diagnosis": "Healthy",
     "prescribedMedication": "None",
@@ -96,18 +117,20 @@ curl -X POST http://localhost:9000/ingest/medical-record -H "Content-Type: appli
 }'
 ```
 
-Add Sensor Data with the following command:
-```shell
-curl -X POST http://localhost:9000/ingest/sensor -H "Content-Type: application/json" -d '{
-  "userId": "user-2",
-  "data": {
-    "userId": "user-2",
-    "source": "smartwatch",
-    "description": "heart rate",
-    "value": "88 bpm"
-  }
-}'
+### Chatting with the Agent
+
+Ask the agent a question:
+```text
+How many steps did I take on the 26th April 2025?
 ```
+(The agent uses the Fitbit Tool to get the data from the Fitbit API)
+
+```text 
+How much REM sleep did i get in the week from 21st april 27th april 2025 on each day? 
+If I have less than 90 minutes on a day I feel exhausted after waking up.
+What can I do to improve my sleep?
+```
+
 
 ## Long-Term Vision
 
