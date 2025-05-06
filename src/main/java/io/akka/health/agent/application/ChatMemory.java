@@ -15,8 +15,6 @@ public class ChatMemory {
     public ChatMemory() {}
 
     public MessageWindowChatMemory getChatMemory(String sessionId, List<ChatMessage> messages) {
-        logger.info("Creating chat memory store for sessionId: {}", sessionId);
-
         var chatMemoryStore = new InMemoryChatMemoryStore();
         chatMemoryStore.updateMessages(sessionId, messages);
 

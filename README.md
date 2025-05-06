@@ -124,7 +124,7 @@ Your heart rate is 90 bpm.
 
 Ask the agent:
 ```text
-Can you tell the reason for my last visit to the doctor?
+Can you tell me the reason for my last visit to the doctor?
 ```
 
 Example response:
@@ -148,7 +148,7 @@ curl -X POST http://localhost:9000/ingest/medical-record -H "Content-Type: appli
 
 Ask the agent:
 ```text
-Can you tell the reason for my last visit to the doctor?
+Can you tell me the reason for my last visit to the doctor?
 ```
 
 Example response:
@@ -158,55 +158,48 @@ The reason for your last visit to the doctor was severe lower back pain. You wer
 
 ### Fitbit Data
 
-TODO
-
-
-Ask the agent a question:
+Ask the agent:
 ```text
 How many steps did I take on the 26th April 2025?
 ```
 (The agent uses the Fitbit Tool to get the data from the Fitbit API)
 
-```text 
-How much REM sleep did i get in the week from 21st april 27th april 2025 on each day? 
-If I have less than 90 minutes on a day I feel exhausted after waking up.
-What can I do to improve my sleep?
+Example Response:
+```text
+On April 26, 2025, you took 17,243 steps.
 ```
 
+Ask the agent
+```text 
+How much REM sleep did i get in the week from 21st april 27th april 2025 on each day?
+```
 
-## Long-Term Vision
+Example Response:
+```text
+Here is the REM sleep you recorded for each day from April 21 to April 27, 2025:
+April 21: 95 minutes
+April 22: 121 minutes
+April 23: 113 minutes
+April 24: 105 minutes
+April 25: 82 minutes
+April 26: 121 minutes
+April 27: 29 minutes
+```
 
-### Functional Requirements
-1. **Data Integration:**
-   - The system shall integrate with wearable devices (e.g., smartwatches, fitness trackers) via APIs to collect real-time health data (heart rate, sleep patterns, activity levels, etc.).
-   - The system shall integrate with electronic health record (EHR) systems via APIs to access users medical history, lab results, and existing diagnoses.
-2. **AI-Powered Chat Interface:**
-   - The system shall provide a natural language chat interface for users to ask health-related questions and describe symptoms.
-   - The AI agent shall analyze user input, interpret medical terminology, and provide accurate and relevant responses.
-   - The AI agent shall be capable of providing personalized advice, suggesting exercises, recommending lifestyle changes and even prescribe medicine based on patient data and medical history. (Prescribing Medicine requires the approval from a doctor)
-3. **Real-Time Health Monitoring and Alerts:**
-   - The system shall continuously monitor user health data from wearables and other sources.
-   - The system shall define customizable thresholds for critical health metrics (e.g., heart rate, blood pressure).
-   - The system shall automatically generate alerts when critical health metrics exceed defined thresholds and notify the user.
-4. **Personalized Health Reports:**
-   - The system shall generate weekly health reports summarizing user health data, trends, and insights.
-   - The reports shall include personalized recommendations for improving health and well-being.
-   - The reports should be easy to understand for non-medical personal.
+Ask the agent
+```text
+What other health metrics do you have for the 27th april 2025?
+```
 
-### Non-Functional Requirements
-1. **Performance:**
-   - The system shall respond to user queries and generate reports within a reasonable timeframe (e.g., within seconds).
-   - The system shall be able to handle a large volume of user data and concurrent requests.
-2. **Usability:**
-   - The web application shall have a user-friendly and intuitive interface.
-   - The AI chat interface shall be easy to use and understand.
-3. **Reliability:**
-   - The system shall be available and reliable, with minimal downtime.
-   - The system should provide reliable information, and clearly state when it is providing information that is not from a medical professional.
-4. **Scalability:**
-   - The system shall be scalable to accommodate a growing number of users and data sources.
-5. **Maintainability:**
-   - The system shall be designed for easy maintenance and updates.
-6. **Accuracy:**
-   - The AI must provide medical information that is as accurate as possible.
-   - The AI must state when it is unsure of an answer, and recommend contacting a medical professional.
+Example Response:
+```text
+On April 27, 2025, here are the health metrics for you:
+
+Sleep Hours: Approximately 5.43 hours
+Steps Walked: 7,107 steps
+Resting Heart Rate: 63 bpm
+Active Minutes for the Week: 510 minutes
+REM Sleep Minutes: 29 minutes
+Heart Rate Outside Safe Range: 0 (your heart rate was within the safe range)
+Please remember to consider your back pain and the importance of incorporating exercise and movement into your daily routine, especially given the sedentary nature of your job.
+```
