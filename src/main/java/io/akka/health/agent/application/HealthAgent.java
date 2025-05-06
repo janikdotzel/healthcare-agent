@@ -88,11 +88,12 @@ public class HealthAgent extends AbstractAgent {
   private Assistant buildAiService(String sessionId, String userId, List<ChatMessage> messages) {
     logger.info("Building AiService for sessionId {} and userId {}", sessionId, userId);
 
+    var systemMessageWithUserId = systemMessage + "\nUserId: " + userId;
     var retrievalAugmentor = new MedicalRecordRAG(mongoDbConfig).getAugmentor(userId);
     var chatMemory = new ChatMemory().getChatMemory(sessionId, messages);
 
     return AiServices.builder(Assistant.class)
-            .systemMessageProvider(__ -> systemMessage)
+            .systemMessageProvider(__ -> systemMessageWithUserId)
             .streamingChatLanguageModel(OpenAiUtils.streamingChatModel())
             .chatMemory(chatMemory)
             .retrievalAugmentor(retrievalAugmentor)
