@@ -1,12 +1,14 @@
 package io.akka.health.ingest.api;
 
-import io.akka.health.ingest.application.MedicalRecordEntity;
+import com.mongodb.client.MongoClient;
+import io.akka.health.common.MongoDbUtils;
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
 import io.akka.health.ingest.application.SensorEntity;
+import io.akka.health.ingest.domain.Index;
 import io.akka.health.ingest.domain.MedicalRecord;
 import io.akka.health.ingest.domain.SensorData;
 import org.slf4j.Logger;
@@ -23,9 +25,15 @@ public class IngestionEndpoint {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
   private final ComponentClient componentClient;
+    private final MongoDbUtils.MongoDbConfig mongoDbConfig;
 
-  public IngestionEndpoint(ComponentClient componentClient) {
+  public IngestionEndpoint(ComponentClient componentClient, MongoClient mongoClient ) {
     this.componentClient = componentClient;
+    this.mongoDbConfig = new MongoDbUtils.MongoDbConfig(
+            mongoClient,
+            "health",
+            "medicalrecord",
+            "medicalrecord-index");
   }
 
   @Post("/sensor")
@@ -40,9 +48,8 @@ public class IngestionEndpoint {
   @Post("/medical-record")
   public CompletionStage<HttpResponse> ingestMedicalRecord(IngestMedicalRecordRequest request) {
     logger.info("Received medical record for user {}: {}", request.userId, request.data);
-    return componentClient.forEventSourcedEntity(request.userId)
-            .method(MedicalRecordEntity::addData)
-            .invokeAsync(request.data)
-            .thenApply(__ -> HttpResponses.accepted());
+    Index index = new Index(mongoDbConfig);
+    return index.indexMedicalRecord(request.data)
+            .thenApply(done -> HttpResponses.accepted());
   }
 }

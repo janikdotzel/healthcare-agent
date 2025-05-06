@@ -1,6 +1,6 @@
 package io.akka.health.common;
 
-import io.akka.Bootstrap;
+import io.akka.health.Bootstrap;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +16,33 @@ public class KeyUtils {
     return readKey("OPENAI_API_KEY");
   }
 
+  public static String readFitbitClientId() {
+    return readKey("FITBIT_CLIENT_ID");
+  }
+
+  public static String readFitbitClientSecret() {
+    return readKey("FITBIT_CLIENT_SECRET");
+  }
+
+  public static String readFitbitAccessToken() {
+    return readKey("FITBIT_ACCESS_TOKEN");
+  }
+
+  public static boolean hasFitbitKeys() {
+    try {
+      return !readFitbitClientId().isEmpty() && !readFitbitClientSecret().isEmpty();
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  public static boolean hasFitbitAccessToken() {
+    try {
+      return !readFitbitAccessToken().isEmpty();
+    } catch (Exception e) {
+      return false;
+    }
+  }
 
   public static boolean hasValidKeys() {
     try {
@@ -30,7 +57,7 @@ public class KeyUtils {
     // first read from env var
     var value = System.getenv(key);
 
-    // if not available, read from src/main/resources/.env.local file
+    // if not available, read from src/main/resources/.env file
     if (value == null) {
       var properties = new Properties();
 

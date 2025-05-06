@@ -8,14 +8,16 @@ import com.mongodb.client.MongoClients;
 import io.akka.health.common.KeyUtils;
 import io.akka.health.common.MongoDbUtils;
 import io.akka.health.ingest.api.IngestionEndpoint;
-import io.akka.health.ingest.application.MedicalRecordEntity;
 import io.akka.health.ingest.application.SensorEntity;
+import io.akka.health.ingest.application.SensorView;
 import io.akka.health.ingest.domain.Index;
 import io.akka.health.ingest.domain.MedicalRecord;
 import io.akka.health.ingest.domain.SensorData;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import akka.javasdk.testkit.TestKitSupport;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 
 
@@ -64,33 +66,6 @@ public class IntegrationTest extends TestKitSupport {
     Assertions.assertEquals(HttpResponses.accepted().status(), response.status());
   }
 
-  @Test
-  public void testMedicalRecordEntity() {
-    String patientId = "patient-1";
-    MedicalRecord medicalRecord = new MedicalRecord(
-            patientId,
-            "Severe lower back pain",
-            "Pinched nerve",
-            "Ibuprofen and massage therapy",
-            "Has an office job. Sits for long hours. Doesn't do any exercise.");
-    Done response = await(
-            componentClient
-                    .forEventSourcedEntity(patientId)
-                    .method(MedicalRecordEntity::addData)
-                    .invokeAsync(medicalRecord));
-
-    Assertions.assertNotNull(response);
-    MedicalRecordEntity.State state = await(
-            componentClient
-                    .forEventSourcedEntity(patientId)
-                    .method(MedicalRecordEntity::getState)
-                    .invokeAsync());
-
-    Assertions.assertEquals(medicalRecord.reasonForVisit(), state.data().getFirst().reasonForVisit());
-    Assertions.assertEquals(medicalRecord.diagnosis(), state.data().getFirst().diagnosis());
-    Assertions.assertEquals(medicalRecord.prescribedMedication(), state.data().getFirst().prescribedMedication());
-  }
-
     @Test
     public void testMedicalRecordEndpoint() {
       String patientId = "patient-1";
@@ -110,6 +85,66 @@ public class IntegrationTest extends TestKitSupport {
 
       Assertions.assertEquals(HttpResponses.accepted().status(), response.status());
     }
+
+  @Test
+  public void testSensorView() {
+    // First, add some sensor data
+    String userId = "user-view-test";
+    SensorData sensorData = new SensorData(userId, "smartwatch", "heart rate", "75 bpm");
+
+    // Add the data using SensorEntity
+    Done addResponse = await(
+            componentClient
+                    .forEventSourcedEntity(userId)
+                    .method(SensorEntity::addData)
+                    .invokeAsync(sensorData));
+    Assertions.assertNotNull(addResponse);
+
+    // Wait a bit to allow the view to be updated (views are eventually consistent)
+    try {
+        TimeUnit.SECONDS.sleep(2);
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+    }
+
+    // Query the data using SensorView with retries
+    SensorView.AllSensorData viewResponse = null;
+    int maxRetries = 3;
+    boolean dataFound = false;
+
+    for (int i = 0; i < maxRetries && !dataFound; i++) {
+        viewResponse = await(
+                componentClient
+                        .forView()
+                        .method(SensorView::getSensorDataByByUser)
+                        .invokeAsync(userId));
+
+        // Check if we got data
+        if (viewResponse != null && !viewResponse.data().isEmpty()) {
+            dataFound = true;
+        } else {
+            // Wait before retrying
+            try {
+                TimeUnit.SECONDS.sleep(1);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    // Verify the response
+    Assertions.assertNotNull(viewResponse, "View response should not be null");
+    Assertions.assertTrue(dataFound, "Sensor data should be found after retries");
+
+    if (dataFound) {
+        // Verify the data matches what we added
+        SensorData retrievedData = viewResponse.data().getFirst();
+        Assertions.assertEquals(userId, retrievedData.userId());
+        Assertions.assertEquals(sensorData.source(), retrievedData.source());
+        Assertions.assertEquals(sensorData.description(), retrievedData.description());
+        Assertions.assertEquals(sensorData.value(), retrievedData.value());
+    }
+  }
 
   @Test
   public void testIndexing() {
