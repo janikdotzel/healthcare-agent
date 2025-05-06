@@ -9,23 +9,21 @@ Improving your well-being and reducing the burden on traditional healthcare syst
 
 ## Architecture
 
-TODO: Insert akka Blueprint for agentic services picture
-
 ```
-┌─────────────────────┐      ┌────────────────────┐      ┌───────────────────┐
-│                     │      │                    │      │                   │
-│  External Systems   │◄────►│  Integration Layer │◄────►│  Domain Layer     │
-│  (Wearables, EHRs)  │      │  (Endpoints)       │      │  (Entities)       │
-│                     │      │                    │      │                   │
-└─────────────────────┘      └────────────────────┘      └─────────┬─────────┘
-                                                                   │
-                                                                   ▼
-                             ┌────────────────────┐      ┌───────────────────┐
-                             │                    │      │                   │
-                             │  User Interface    │◄────►│ Application Layer │
-                             │  (Web Application) │      │ (Workflows,Views) │
-                             │                    │      │                   │
-                             └────────────────────┘      └───────────────────┘
+┌────────────────────────────┐      ┌──────────────────────┐      ┌──────────────────────────────┐
+│                            │      │                      │      │                              │
+│  Streaming Endpoints       │◄────►│  Agent Orchestration │◄────►│  Agent Connectors            │
+│  (Sensor, Medical Record,  │      │                      │      │  (LLM, Fitbit, Sensor,       │
+│   Agent)                   │      │                      │      │   Vector DB)                 │
+└────────────────────────────┘      └────────────┬─────────┘      └──────────────┬───────────────┘
+                                                 │                               │
+                                                 ▼                               ▼
+                                    ┌──────────────────────┐            ┌────────────────────────┐
+                                    │                      │            │                        │
+                                    │  Agent Context DB    │            │  Vector DB             │
+                                    │  (Session Entity)    │            │  (Medical Records)     │
+                                    │                      │            │                        │
+                                    └──────────────────────┘            └────────────────────────┘
 ```
 
 ### Streaming Endpoints
@@ -53,10 +51,17 @@ Talk to LLMs, Vector DBs, MCP Servers, enterprise APIs and other systems
 #### Agent Orchestration
 Execute reliably. Durable workflows that ensure agent actions and LLM calls execute reliably, even in the face of failures, timeouts, hallucinations, or restarts.
 
-> Currently, the agent is not orchestrated. 
-> It does LLM calls and uses the SensorTool, FitbitTool as well as doing RAG on Medical Records. But without any safety net.
+> Currently, the agent is not orchestrated through Akka.  
+> The agent does LLM calls and uses the SensorTool, FitbitTool as well as doing RAG on Medical Records. 
+> But that functionality comes from the Langchain AI Service and is not executed durably.
 
 ## Usage
+
+Setup Environment Variables
+
+```text
+Copy the `.env.example` file to `.env` and set the following environment variables:
+```
 
 Start the service locally:
 ```shell
@@ -75,9 +80,24 @@ akka local console
 
 ## Testing
 
-### Ingesting Data
+Visit:
+```shell
+http://localhost:9000/
+```
 
-Add Sensor Data with the following command:
+### Sensor Data
+
+Ask the agent:
+```text
+Can you tell me my heart rate by searching the sensor data?
+```
+
+Example response:
+```text
+It seems that there is no heart rate data available in your sensor data.
+```  
+
+Ingest Sensor Data:
 ```shell
 curl -X POST http://localhost:9000/ingest/sensor -H "Content-Type: application/json" -d '{
   "userId": "demo-user",
@@ -90,7 +110,29 @@ curl -X POST http://localhost:9000/ingest/sensor -H "Content-Type: application/j
 }'
 ```
 
-Add Medical Records with the following command:
+Ask the agent:
+```text
+Can you tell me my heart rate by searching the sensor data?
+```
+
+Example response:
+```text
+Your heart rate is 90 bpm.
+```
+
+### Medical Record (RAG)
+
+Ask the agent:
+```text
+Can you tell the reason for my last visit to the doctor?
+```
+
+Example response:
+```text
+I don't have specific details of your medical records.
+``` 
+
+Ingest Medical Records:
 ```shell
 curl -X POST http://localhost:9000/ingest/medical-record -H "Content-Type: application/json" -d '{
   "userId": "demo-user",
@@ -104,20 +146,20 @@ curl -X POST http://localhost:9000/ingest/medical-record -H "Content-Type: appli
 }'
 ```
 
-```shell
-curl -X POST http://localhost:9000/ingest/medical-record -H "Content-Type: application/json" -d '{
-  "userId": "demo-user",
-  "data": {
-    "patientId": "demo-user",
-    "reasonForVisit": "Routine check-up",
-    "diagnosis": "Healthy",
-    "prescribedMedication": "None",
-    "notes": "No issues reported"
-  }
-}'
+Ask the agent:
+```text
+Can you tell the reason for my last visit to the doctor?
 ```
 
-### Chatting with the Agent
+Example response:
+```text
+The reason for your last visit to the doctor was severe lower back pain. You were diagnosed with a pinched nerve, and prescribed medication included ibuprofen along with massage therapy. The notes indicated that you have an office job, sit for long hours, and do not engage in any exercise.
+```
+
+### Fitbit Data
+
+TODO
+
 
 Ask the agent a question:
 ```text
