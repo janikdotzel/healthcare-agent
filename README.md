@@ -3,27 +3,55 @@
 ## Description
 
 A personal health advisor agent, integrating data from various sources (fitness trackers, medical records and other sensors)
-to provide real-time health insights, personalized recommendations and immediate support for everyone.
-
-Improving your well-being and reducing the burden on traditional healthcare systems, where it's not necessary.
+to provide real-time health insights, personalized recommendations and immediate support.
 
 ## Architecture
 
-```
-┌────────────────────────────┐      ┌──────────────────────┐      ┌──────────────────────────────┐
-│                            │      │                      │      │                              │
-│  Streaming Endpoints       │◄────►│  Agent Orchestration │◄────►│  Agent Connectors            │
-│  (Sensor, Medical Record,  │      │                      │      │  (LLM, Fitbit, Sensor,       │
-│   Agent)                   │      │                      │      │   Vector DB)                 │
-└────────────────────────────┘      └────────────┬─────────┘      └──────────────┬───────────────┘
-                                                 │                               │
-                                                 ▼                               ▼
-                                    ┌──────────────────────┐            ┌────────────────────────┐
-                                    │                      │            │                        │
-                                    │  Agent Context DB    │            │  Vector DB             │
-                                    │  (Session Entity)    │            │  (Medical Records)     │
-                                    │                      │            │                        │
-                                    └──────────────────────┘            └────────────────────────┘
+```mermaid
+sequenceDiagram
+%% Actors & Stores
+  participant Chat UI
+  participant AgentEndpoint
+  participant HealthAgent
+  participant SensorTool
+  participant FitbitTool
+  participant MedicalRecordRAG
+  participant LLM              %% new
+  participant IngestionEndpoint
+  participant SensorEntity
+  participant MongoDB
+  participant Fitbit API
+
+%% Data-ingestion flows (out of band)
+  IngestionEndpoint->>SensorEntity: Store incoming sensor data
+  IngestionEndpoint->>MongoDB: Index & save embeddings for medical records
+
+%% Interactive query flow
+  Chat UI->>+AgentEndpoint: User message / question
+  AgentEndpoint->>+HealthAgent: Invoke agent with user request
+
+  loop 1..N tool calls (determined by agent planning)
+    par Sensor data (if required)
+      HealthAgent->>SensorTool: Retrieve sensor data
+      SensorTool->>SensorEntity: Read stored sensor values
+      SensorTool-->>HealthAgent: Sensor results
+    and Fitbit data (if required)
+      HealthAgent->>FitbitTool: Retrieve Fitbit metrics
+      FitbitTool->>Fitbit API: /activities, /sleep, /heartrate …
+      FitbitTool-->>HealthAgent: Fitbit results
+    and Medical record info (if required)
+      HealthAgent->>MedicalRecordRAG: Query medical history
+      MedicalRecordRAG->>MongoDB: Vector search over embeddings
+      MedicalRecordRAG-->>HealthAgent: Relevant medical info
+    end
+  end
+
+%% New step: compose prompt for LLM
+  HealthAgent->>LLM: Prompt with (original question + tool results)
+  LLM-->>HealthAgent: Draft answer
+
+  HealthAgent-->>-AgentEndpoint: Final answer
+  AgentEndpoint-->>Chat UI: Stream / return response
 ```
 
 ### Streaming Endpoints
@@ -51,9 +79,12 @@ Talk to LLMs, Vector DBs, MCP Servers, enterprise APIs and other systems
 #### Agent Orchestration
 Execute reliably. Durable workflows that ensure agent actions and LLM calls execute reliably, even in the face of failures, timeouts, hallucinations, or restarts.
 
-> Currently, the agent is not orchestrated through Akka.  
-> The agent does LLM calls and uses the SensorTool, FitbitTool as well as doing RAG on Medical Records. 
-> But that functionality comes from the Langchain AI Service and is not executed durably.
+> Currently, the agent does not use Akka's Orchestration Workflow.  
+> When the agent receives a request, the Agent determines if zero, one or more tools are needed to answer the question.
+> The agent then calls the tools (SensorTool, FitbitTool as well as doing RAG on Medical Records) and waits for the results.
+> After that the agent calls the LLM with the results from the tools and the original question.
+> Then the agent returns the answer to the user.
+
 
 ## Usage
 
