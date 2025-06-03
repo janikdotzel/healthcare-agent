@@ -1,29 +1,28 @@
 package io.akka.health.agent.application;
 
-import akka.NotUsed;
-import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.TokenStream;
-import io.akka.fitbit.FitbitClient;
-import io.akka.health.common.AkkaStreamUtils;
-import io.akka.health.common.MongoDbUtils;
-import io.akka.health.agent.domain.StreamResponse;
+import akka.japi.Function;
+import akka.japi.function.Function2;
+import akka.japi.function.Function3;
+import akka.japi.function.Function4;
+import akka.javasdk.agent.Agent;
+import akka.javasdk.agent.MemoryProvider;
+import akka.javasdk.agent.ModelProvider;
+import akka.javasdk.annotations.AgentDescription;
+import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.client.ComponentClient;
-import akka.stream.javadsl.Source;
+import dev.langchain4j.spi.prompt.PromptTemplateFactory;
+import io.akka.fitbit.FitbitClient;
+
 import com.mongodb.client.MongoClient;
-import dev.langchain4j.data.message.ChatMessage;
-import io.akka.health.common.OpenAiUtils;
-import io.akka.health.ui.application.SessionEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
-public class HealthAgent extends AbstractAgent {
+@ComponentId("health-agent")
+@AgentDescription(name = "Health Agent", description = "A personal health assistant with knowledge about the user's health data.")
+public class HealthAgent extends Agent {
 
   private final static Logger logger = LoggerFactory.getLogger(HealthAgent.class);
   private final ComponentClient componentClient;
-  private final MongoDbUtils.MongoDbConfig mongoDbConfig;
-  private final FitbitClient fitbitClient;
   private final String systemMessage = """
     You are a personal health assistant that helps the user to stay healthy.
     You have access to the user's health data that is observed through fitness trackers and made available through Fitbit.
@@ -31,73 +30,38 @@ public class HealthAgent extends AbstractAgent {
     Answer the question in a concise way.
     """;
   private final String userId;
-  private final String sessionId;
+  private final FitbitClient fitbitClient;
+  private final MedicalRecordRAG medicalRecordRAG;
 
-  public HealthAgent(ComponentClient componentClient, MongoClient mongoClient, FitbitClient fitbitClient, String userId, String sessionId) {
-    super(componentClient);
+  public HealthAgent(ComponentClient componentClient, MongoClient mongoClient, FitbitClient fitbitClient) {
     this.componentClient = componentClient;
-    this.mongoDbConfig = new MongoDbUtils.MongoDbConfig(
-        mongoClient,
-        "health",
-        "medicalrecord",
-        "medicalrecord-index");
+    // The context().sessionId() looks like this `userId + "-" + sessionId`
+    this.userId = context().sessionId().split("-")[0];
     this.fitbitClient = fitbitClient;
-    this.userId = userId;
-    this.sessionId = sessionId;
+    this.medicalRecordRAG = new MedicalRecordRAG(mongoClient, userId);
   }
 
-  public Source<StreamResponse, NotUsed> ask(String question) {
+  public Agent.StreamEffect ask(String question) throws Exception {
+    // The userId is needed to query the user's Fitbit data.
+    String promptTemplate = """
+        Question: %s
+        Knowledge: %s
+        UserId: %s
+        """;
+    Function4<String, String, String, String, String> render = String::format;
 
-    // we want the SessionEntity id to be unique for each user session,
-    // therefore we use a composite key of userId and sessionId
-    var compositeEntityId = userId + ":" + sessionId;
-    var sessionHistory = fetchSessionHistory(compositeEntityId);
-    var assistant = buildAiService(compositeEntityId, userId, sessionHistory);
+    String knowledge = medicalRecordRAG.retrieve(question, userId);
+    String prompt = render.apply(promptTemplate, question, knowledge, userId);
 
-    // Call the llm and get the response as a streaming source
-    var source = AkkaStreamUtils.toAkkaSource(assistant.chat(question));
-    return source.map(res -> {
-          if (res.finished()) { // is the last message?
-            logger.debug("Exchange finished. Total input tokens {}, total output tokens {}", res.inputTokens(), res.outputTokens());
+    var fitbitTool = new FitbitTool(fitbitClient);
+    var sensorTool = new SensorTool(componentClient);
 
-            // when we have a finished response, we save the exchange to the SessionEntity
-            var exchange = new SessionEntity.Exchange(
-              userId,
-              sessionId,
-              question, res.inputTokens(),
-              res.content(), res.outputTokens());
-
-            logger.info("Complete Response: {}", res.content());
-
-            // since the full response has already been streamed, the last message can be transformed to an empty message
-            addExchangeToSession(compositeEntityId, exchange);
-            return StreamResponse.empty();
-          }
-          else {
-            logger.debug("partial message '{}'", res.content());
-            // other messages are streamed out to the called (those are the responseTokensCount emitted by the llm)
-            return res;
-          }
-        });
-  }
-
-  private interface Assistant {
-    TokenStream chat(String message);
-  }
-
-  private Assistant buildAiService(String sessionId, String userId, List<ChatMessage> messages) {
-    logger.info("Building AiService for sessionId {} and userId {}", sessionId, userId);
-
-    var systemMessageWithUserId = systemMessage + "\nUserId: " + userId;
-    var retrievalAugmentor = new MedicalRecordRAG(mongoDbConfig).getAugmentor(userId);
-    var chatMemory = new ChatMemory().getChatMemory(sessionId, messages);
-
-    return AiServices.builder(Assistant.class)
-            .systemMessageProvider(__ -> systemMessageWithUserId)
-            .streamingChatLanguageModel(OpenAiUtils.streamingChatModel())
-            .chatMemory(chatMemory)
-            .retrievalAugmentor(retrievalAugmentor)
-            .tools(new FitbitTool(fitbitClient), new SensorTool(componentClient))
-            .build();
+    //TODO: Add the FitbitTool and the SensorTool to the streamEffect
+    return streamEffects()
+            .memory(MemoryProvider.limitedWindow())
+            .model(ModelProvider.openAi())
+            .systemMessage(systemMessage)
+            .userMessage(prompt)
+            .thenReply();
   }
 }

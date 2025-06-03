@@ -1,6 +1,8 @@
 package io.akka.health.agent;
 
+import akka.javasdk.agent.SessionMessage;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.impl.agent.SessionMemoryClient;
 import akka.javasdk.testkit.TestKitSupport;
 import com.mongodb.client.MongoClients;
 import io.akka.fitbit.FitbitClient;
@@ -14,7 +16,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
@@ -34,14 +38,17 @@ public class IntegrationTest extends TestKitSupport {
     public void testThatHealthAgentUsesRAG() {
         var userId = "user-1";
         var sessionId = "session-1";
-        var compositeId = userId + ":" + sessionId;
-        var agent = new HealthAgent(componentClient, MongoClients.create(KeyUtils.readMongoDbUri()), new FitbitClient(httpClient), userId, sessionId);
+        var compositeId = userId + "-" + sessionId;
 
         // Check that the agent used RAG by asking a question that requires it
         var question = "What is the reason for the patient's visit?";
-        var streamResponse = agent.ask(question);
+        var streamResponse = componentClient
+                .forAgent()
+                .inSession(compositeId)
+                .tokenStream(HealthAgent::ask)
+                .source(question);
         var answer = await(
-                streamResponse.runFold("", (acc, partial) -> acc + partial.content(), testKit.getMaterializer()),
+                streamResponse.runFold("", (acc, partial) -> acc + partial, testKit.getMaterializer()),
                 Duration.ofSeconds(30));
         logger.info("Question: {}", question);
         logger.info("Answer: {}", answer);
@@ -54,19 +61,26 @@ public class IntegrationTest extends TestKitSupport {
         Awaitility.await()
                 .atMost(30, TimeUnit.of(SECONDS))
                 .untilAsserted(() -> {
-                    var session = getSession(componentClient, compositeId);
+                    var messages = getSession(componentClient, compositeId);
 
-                    // Assert that the question and the answer are saved in the session
-                    Assertions.assertTrue(session.messages().stream().anyMatch(message -> Objects.equals(message.content(), question)));
-                    Assertions.assertTrue(session.messages().stream().anyMatch(message -> Objects.equals(message.content(), answer)));
+                    Assertions.assertFalse(messages.isEmpty(), "Session should not be empty");
+
+                    Assertions.assertInstanceOf(SessionMessage.UserMessage.class, messages.getFirst(), "First message should be of type UserMessage");
+                    SessionMessage.UserMessage userMessage = (SessionMessage.UserMessage) messages.getFirst();
+                    Assertions.assertTrue(userMessage.text().contains(question), "First message should contain the question");
+
+                    Assertions.assertInstanceOf(SessionMessage.AiMessage.class, messages.getLast(), "Second message should be of type AiMessage");
+                    SessionMessage.AiMessage aiMessage = (SessionMessage.AiMessage) messages.getLast();
+                    Assertions.assertTrue(aiMessage.text().contains(answer), "Last message should contain the answer");
                 });
     }
 
-    private SessionEntity.Messages getSession(ComponentClient componentClient, String sessionId) {
-        var session = await(componentClient
-                .forEventSourcedEntity(sessionId)
-                .method(SessionEntity::getHistory)
-                .invokeAsync());
-        return session;
+    private List<SessionMessage> getSession(ComponentClient componentClient, String sessionId) {
+        SessionMemoryClient sessionMemoryClient = new SessionMemoryClient(
+                componentClient,
+                new SessionMemoryClient.MemorySettings(true, false, Optional.of(Integer.MAX_VALUE)));
+
+        var history = sessionMemoryClient.getHistory(sessionId);
+        return history.messages();
     }
 }
