@@ -3,7 +3,6 @@ package io.akka.health.ingest.domain;
 import akka.Done;
 import io.akka.health.common.MongoDbUtils;
 import io.akka.health.common.OpenAiUtils;
-import com.mongodb.client.MongoClient;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.DocumentSplitter;
 import dev.langchain4j.data.document.Metadata;
@@ -28,7 +27,7 @@ public class Index {
   public Index(MongoDbUtils.MongoDbConfig mongoDbConfig) {
     this.embeddingModel = OpenAiUtils.embeddingModel();
     this.embeddingStore = MongoDbUtils.mongoDbEmbeddingStore(mongoDbConfig);
-    this.splitter = new DocumentByCharacterSplitter(500, 50, OpenAiUtils.buildTokenizer());
+    this.splitter = new DocumentByCharacterSplitter(500, 50);
   }
 
   public CompletionStage<Done> indexMedicalRecord(MedicalRecord medicalRecord) {
