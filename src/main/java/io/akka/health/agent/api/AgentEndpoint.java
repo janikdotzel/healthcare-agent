@@ -7,6 +7,7 @@ import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.http.HttpResponses;
+import io.akka.health.agent.model.HealthAgentRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,12 +29,30 @@ public class AgentEndpoint {
     public HttpResponse ask(AskRequest request) {
         log.info("Received request: {}", request);
         var sessionId = request.userId + "-" + request.sessionId;
-        var responseStream = componentClient
+//        var responseStream = componentClient
+//                .forAgent()
+//                .inSession(sessionId)
+//                .tokenStream(HealthAgent::ask)
+//                .source(new HealthAgentRequest(request.question, request.userId));
+//
+//        var loggingStream = responseStream
+//                .map(token -> {
+//                    log.info("Token: {}", token);
+//                    return token;
+//                })
+//                .log("HealthAgentResponse");
+//
+//        return HttpResponses.serverSentEvents(loggingStream);
+
+        var response = componentClient
                 .forAgent()
                 .inSession(sessionId)
-                .tokenStream(HealthAgent::ask)
-                .source(request.question);
+                .method(HealthAgent::askSync)
+                .invoke(new HealthAgentRequest(request.question, request.userId));
 
-        return HttpResponses.serverSentEvents(responseStream);
+        log.info("Response: {}", response);
+
+
+        return HttpResponses.ok(response);
     }
 }
