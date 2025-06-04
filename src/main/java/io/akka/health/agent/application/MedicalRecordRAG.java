@@ -12,17 +12,24 @@ import dev.langchain4j.rag.query.Metadata;
 import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder;
 import io.akka.health.common.MongoDbUtils;
 import io.akka.health.common.OpenAiUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MedicalRecordRAG {
-    private final RetrievalAugmentor retrievalAugmentor;
-    private final ContentInjector contentInjector = new DefaultContentInjector();
+    private final MongoDbUtils.MongoDbConfig mongoDbConfig;
+    private final static Logger logger = LoggerFactory.getLogger(MedicalRecordRAG.class);
 
-    public MedicalRecordRAG(MongoClient mongoClient, String userId) {
-        var mongoDbConfig = new MongoDbUtils.MongoDbConfig(
+
+    public MedicalRecordRAG(MongoClient mongoClient) {
+        this.mongoDbConfig = new MongoDbUtils.MongoDbConfig(
                 mongoClient,
                 "health",
                 "medicalrecord",
                 "medicalrecord-index");
+    }
+
+    public String retrieve(String question, String userId) {
+        // Create a retriever
         var contentRetriever = EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(MongoDbUtils.embeddingStore(mongoDbConfig))
                 .embeddingModel(OpenAiUtils.embeddingModel())
@@ -31,19 +38,20 @@ public class MedicalRecordRAG {
                 // Currently the patientId must equal the userId
                 .filter(MetadataFilterBuilder.metadataKey("patientId").isEqualTo(userId))
                 .build();
-
-        this.retrievalAugmentor = DefaultRetrievalAugmentor.builder()
+        var retrievalAugmenter = DefaultRetrievalAugmentor.builder()
                 .contentRetriever(contentRetriever)
                 .build();
-    }
 
-    public String retrieve(String question, String userId) {
+        // Retrieve the data
         var chatMessage = new UserMessage(question);
         var metadata = Metadata.from(chatMessage, null, null);
         var augmentationRequest = new AugmentationRequest(chatMessage, metadata);
 
-        var result = retrievalAugmentor.augment(augmentationRequest);
-        UserMessage augmented = (UserMessage) contentInjector.inject(result.contents(), chatMessage);
+        var result = retrievalAugmenter.augment(augmentationRequest);
+        logger.info("Retrieved the following content: {}", result.contents());
+
+        UserMessage augmented = (UserMessage) new DefaultContentInjector().inject(result.contents(), chatMessage);
+        logger.info("Augmented message: {}", augmented);
         return augmented.singleText();
     }
 
