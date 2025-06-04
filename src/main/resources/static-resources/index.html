@@ -102,7 +102,7 @@ function ChatUI({ userId, onLogout }) {
     const fetchSessions = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`/session/${userId}`);
+            const response = await fetch(`/users/${userId}/sessions`);
             if (!response.ok) throw new Error(`HTTP error ${response.status}`);
             const data = await response.json();
             const transformedSessions = data.sessions.map(session => ({

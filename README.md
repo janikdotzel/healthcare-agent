@@ -143,7 +143,7 @@ curl -X POST http://localhost:9000/ingest/sensor -H "Content-Type: application/j
 
 Ask the agent:
 ```text
-Can you tell me my heart rate by searching the sensor data?
+and now?
 ```
 
 Example response:
@@ -179,7 +179,7 @@ curl -X POST http://localhost:9000/ingest/medical-record -H "Content-Type: appli
 
 Ask the agent:
 ```text
-Can you tell me the reason for my last visit to the doctor?
+and now?
 ```
 
 Example response:
