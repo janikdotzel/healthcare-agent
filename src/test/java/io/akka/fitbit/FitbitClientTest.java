@@ -2,7 +2,8 @@ package io.akka.fitbit;
 
 import akka.actor.ActorSystem;
 import akka.javasdk.testkit.TestKitSupport;
-import io.akka.fitbit.model.*;
+import io.akka.health.fitbit.FitbitClient;
+import io.akka.health.fitbit.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
 
@@ -16,7 +17,7 @@ public class FitbitClientTest extends TestKitSupport {
     private static ActorSystem system;
     private final FitbitClient fitbitClient = new FitbitClient(httpClient);
 
-    private static final String ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyM1E5NVIiLCJzdWIiOiI3RlI3WDIiLCJpc3MiOiJGaXRiaXQiLCJ0eXAiOiJhY2Nlc3NfdG9rZW4iLCJzY29wZXMiOiJyc29jIHJlY2cgcnNldCByaXJuIHJveHkgcm51dCBycHJvIHJzbGUgcmNmIHJhY3QgcmxvYyBycmVzIHJ3ZWkgcmhyIHJ0ZW0iLCJleHAiOjE3NDYyMDkzOTEsImlhdCI6MTc0NjE4MDU5MX0.5eY9PKTApPqRS7RLZ9vpBYZEN5poSLCPfubn8X3bvnQ";
+    private static final String ACCESS_TOKEN = "";
 
     @Test
     public void testGetHeartRateData() {

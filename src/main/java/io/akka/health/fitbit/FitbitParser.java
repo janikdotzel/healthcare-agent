@@ -1,9 +1,9 @@
-package io.akka.fitbit;
+package io.akka.health.fitbit;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.akka.fitbit.model.*;
+import io.akka.health.fitbit.model.*;
 
 /**
  * Parser for Fitbit API responses.

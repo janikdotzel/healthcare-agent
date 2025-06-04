@@ -1,8 +1,8 @@
 package io.akka.health.agent.application;
 
 import dev.langchain4j.agent.tool.Tool;
-import io.akka.fitbit.FitbitClient;
-import io.akka.fitbit.model.*;
+import io.akka.health.fitbit.FitbitClient;
+import io.akka.health.fitbit.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -7,10 +7,10 @@ import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.client.ComponentClient;
-import io.akka.fitbit.FitbitClient;
+import io.akka.health.fitbit.FitbitClient;
 
 import com.mongodb.client.MongoClient;
-import io.akka.fitbit.model.DailyActivitySummary;
+import io.akka.health.fitbit.model.DailyActivitySummary;
 import io.akka.health.agent.model.HealthAgentRequest;
 import io.akka.health.ingest.application.SensorView;
 import org.slf4j.Logger;

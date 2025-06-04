@@ -1,4 +1,4 @@
-package io.akka.fitbit.model;
+package io.akka.health.fitbit.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

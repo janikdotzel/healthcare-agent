@@ -1,10 +1,10 @@
-package io.akka.fitbit;
+package io.akka.health.fitbit;
 
 import akka.http.javadsl.model.headers.HttpCredentials;
 import akka.javasdk.http.HttpClient;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.akka.fitbit.model.*;
+import io.akka.health.fitbit.model.*;
 import io.akka.health.common.KeyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
