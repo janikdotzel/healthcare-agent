@@ -27,32 +27,15 @@ public class AgentEndpoint {
 
     @Post("/ask")
     public HttpResponse ask(AskRequest request) {
-        log.info("Received request: {}", request);
+        log.info("Request: {}", request);
         var sessionId = request.userId + "-" + request.sessionId;
-//        var responseStream = componentClient
-//                .forAgent()
-//                .inSession(sessionId)
-//                .tokenStream(HealthAgent::ask)
-//                .source(new HealthAgentRequest(request.question, request.userId));
-//
-//        var loggingStream = responseStream
-//                .map(token -> {
-//                    log.info("Token: {}", token);
-//                    return token;
-//                })
-//                .log("HealthAgentResponse");
-//
-//        return HttpResponses.serverSentEvents(loggingStream);
-
         var response = componentClient
                 .forAgent()
                 .inSession(sessionId)
-                .method(HealthAgent::askSync)
+                .method(HealthAgent::ask)
                 .invoke(new HealthAgentRequest(request.question, request.userId));
 
         log.info("Response: {}", response);
-
-
         return HttpResponses.ok(response);
     }
 }

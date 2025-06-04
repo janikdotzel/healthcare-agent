@@ -7,7 +7,6 @@ import akka.javasdk.annotations.AgentDescription;
 import akka.javasdk.annotations.ComponentId;
 import akka.javasdk.annotations.FunctionTool;
 import akka.javasdk.client.ComponentClient;
-import dev.langchain4j.agent.tool.Tool;
 import io.akka.fitbit.FitbitClient;
 
 import com.mongodb.client.MongoClient;
@@ -43,29 +42,7 @@ public class HealthAgent extends Agent {
     this.medicalRecordRAG = new MedicalRecordRAG(mongoClient);
   }
 
-//  public Agent.StreamEffect ask(HealthAgentRequest request) {
-//    // The userId is needed to query the user's Fitbit data.
-//    String promptTemplate = """
-//        Question: %s
-//        Knowledge: %s
-//        UserId: %s
-//        """;
-//
-//    String knowledge = medicalRecordRAG.retrieve(request.question(), request.userId());
-//    String prompt = promptTemplate.formatted(request.question(), knowledge, request.userId());
-//
-//    logger.info("Processing request: {}", prompt);
-//
-//    return streamEffects()
-//            .memory(MemoryProvider.limitedWindow())
-////            .model(ModelProvider.openAi())
-//            .systemMessage(systemMessage)
-//            .userMessage(prompt)
-//            .thenReply();
-//  }
-
-  public Agent.Effect<String> askSync(HealthAgentRequest request) {
-    // The userId is needed to query the user's Fitbit data.
+  public Agent.Effect<String> ask(HealthAgentRequest request) {
     String promptTemplate = """
         Question: %s
         Knowledge: %s
@@ -90,37 +67,46 @@ public class HealthAgent extends Agent {
   }
 
   @FunctionTool(description = "Get resting heart rate for a specific date")
-  public Integer restingHeartRate(LocalDate date) {
-    return fitbitTool.restingHeartRate(date);
+  public Integer restingHeartRate(String date) {
+    LocalDate parsedDate = LocalDate.parse(date);
+    return fitbitTool.restingHeartRate(parsedDate);
   }
 
   @FunctionTool(description = "Check if heart rate (in bpm) exceeded the range for a specific date. If exceeded, it returns the value that exceeded the range the most. Otherwise it reurns 0.")
-  public Integer isHeartRateOutsideSafeRange(LocalDate date, int minThreshold, int maxThreshold) {
-    return fitbitTool.isHeartRateOutsideSafeRange(date, minThreshold, maxThreshold);
+  public Integer isHeartRateOutsideSafeRange(String date, int minThreshold, int maxThreshold) {
+    LocalDate parsedDate = LocalDate.parse(date);
+    return fitbitTool.isHeartRateOutsideSafeRange(parsedDate, minThreshold, maxThreshold);
   }
 
   @FunctionTool(description = "Get total active minutes for a specific date range (usually one week).")
-  public Integer getActiveMinutesInWeek(LocalDate startDate, LocalDate endDate) {
-    return fitbitTool.getActiveMinutesInWeek(startDate, endDate);
+  public Integer getActiveMinutesInWeek(String startDate, String endDate) {
+    LocalDate start = LocalDate.parse(startDate);
+    LocalDate end = LocalDate.parse(endDate);
+    return fitbitTool.getActiveMinutesInWeek(start, end);
   }
 
   @FunctionTool(description = "Get amount of sleep hours for a specific date.")
-  public Double getSleepHoursForDay(LocalDate date) {
-    return fitbitTool.getSleepHoursForDay(date);
+  public Double getSleepHoursForDay(String date) {
+    LocalDate parsedDate = LocalDate.parse(date);
+    return fitbitTool.getSleepHoursForDay(parsedDate);
   }
 
   @FunctionTool(description = "Get amount of REM sleep in minutes for a specific date.")
-  public Integer getRemSleepMinutes(LocalDate date) {
-    return fitbitTool.getRemSleepMinutes(date);
+  public Integer getRemSleepMinutes(String date) {
+    LocalDate parsedDate = LocalDate.parse(date);
+    return fitbitTool.getRemSleepMinutes(parsedDate);
   }
 
   @FunctionTool(description = "Get all sport activities (sport, gym, aerobic) for a specific date range (usually one week).")
-  public List<DailyActivitySummary.Activity> getSportActivitiesInWeek(LocalDate startDate, LocalDate endDate) {
-    return fitbitTool.getSportActivitiesInWeek(startDate, endDate);
+  public List<DailyActivitySummary.Activity> getSportActivitiesInWeek(String startDate, String endDate) {
+    LocalDate start = LocalDate.parse(startDate);
+    LocalDate end = LocalDate.parse(endDate);
+    return fitbitTool.getSportActivitiesInWeek(start, end);
   }
 
   @FunctionTool(description = "Get number of steps walked for a specific date.")
-  public Integer getStepsForDay(LocalDate date) {
-    return fitbitTool.getStepsForDay(date);
+  public Integer getStepsForDay(String date) {
+    LocalDate parsedDate = LocalDate.parse(date);
+    return fitbitTool.getStepsForDay(parsedDate);
   }
 }
